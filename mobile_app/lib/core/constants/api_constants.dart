@@ -1,7 +1,7 @@
 class ApiK {
   static const String base = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://agrobrain-backend.onrender.com',
+    defaultValue: 'https://agrobrain360.onrender.com',
   );
   static const String local = String.fromEnvironment(
     'API_LOCAL_URL',

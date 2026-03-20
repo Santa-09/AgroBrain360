@@ -64,6 +64,7 @@ Create the environment variables listed in [environment_variables.md](d:\AgroBra
 At minimum, set:
 
 - `DATABASE_URL`
+- `SUPABASE_DB_POOLER_URL`
 - `SECRET_KEY`
 - `ALLOWED_ORIGINS`
 - `SUPABASE_URL`
@@ -74,6 +75,7 @@ At minimum, set:
 Important for Supabase:
 
 - Use the Supabase pooler connection string for `DATABASE_URL` on Render
+- You can set the same pooler URI in `SUPABASE_DB_POOLER_URL`; the backend will prefer it automatically
 - Avoid the direct database host `db.<project-ref>.supabase.co:5432` if Render logs show `Network is unreachable`
 - The pooler URI is available in the Supabase dashboard under `Project Settings -> Database -> Connection string`
 

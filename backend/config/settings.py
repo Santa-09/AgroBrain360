@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     BASE_DIR: Path = Path(__file__).resolve().parents[1]
     STATIC_DIR: Path = BASE_DIR / "static"
     DATABASE_URL: str = ""
+    SUPABASE_DB_POOLER_URL: str = ""
     SECRET_KEY: str = "changeme"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
@@ -59,7 +60,7 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        value = self.DATABASE_URL.strip()
+        value = (self.SUPABASE_DB_POOLER_URL or self.DATABASE_URL).strip()
         if value.startswith("postgres://"):
             value = "postgresql://" + value[len("postgres://") :]
         if value.startswith("postgresql://") and "sslmode=" not in value:
@@ -72,7 +73,7 @@ class Settings(BaseSettings):
             return
 
         required_values = {
-            "DATABASE_URL": self.DATABASE_URL,
+            "DATABASE_URL": self.SUPABASE_DB_POOLER_URL or self.DATABASE_URL,
             "SECRET_KEY": self.SECRET_KEY,
             "SUPABASE_URL": self.SUPABASE_URL,
             "SUPABASE_SECRET_KEY": self.SUPABASE_SECRET_KEY,
