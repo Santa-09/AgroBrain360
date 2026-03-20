@@ -476,5 +476,4 @@ The repository includes a ready-to-use Render configuration in `render.yaml`.
 
 ## License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.#   A g r o B r a i n 3 6 0  
- 
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.#
