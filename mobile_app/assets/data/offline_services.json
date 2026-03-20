@@ -1,0 +1,90 @@
+[
+  {
+    "id": "svc_1",
+    "name": "Dr. Ramesh Kumar",
+    "category": "Vets",
+    "specialty": "Cattle and Buffalo Specialist",
+    "distance": 2.1,
+    "rating": 4.8,
+    "phone": "9876543210",
+    "open": true,
+    "address": "Near Bus Stand, Bhubaneswar"
+  },
+  {
+    "id": "svc_2",
+    "name": "Kishan Agro Inputs",
+    "category": "Input Dealers",
+    "specialty": "Seeds, fertilizers, pesticides",
+    "distance": 1.4,
+    "rating": 4.5,
+    "phone": "9123456789",
+    "open": true,
+    "address": "Main Market Road"
+  },
+  {
+    "id": "svc_3",
+    "name": "Sharma Tractor Works",
+    "category": "Repair Centers",
+    "specialty": "Tractor and harvester repair",
+    "distance": 3.8,
+    "rating": 4.3,
+    "phone": "9988776655",
+    "open": false,
+    "address": "Industrial Area, Sector 4"
+  },
+  {
+    "id": "svc_4",
+    "name": "Government Veterinary Hospital",
+    "category": "Vets",
+    "specialty": "All animals, low-cost care",
+    "distance": 4.2,
+    "rating": 4.0,
+    "phone": "06742301234",
+    "open": true,
+    "address": "District HQ Road"
+  },
+  {
+    "id": "svc_5",
+    "name": "APMC Grain Market",
+    "category": "Mandis",
+    "specialty": "Wheat, rice, vegetables",
+    "distance": 6.5,
+    "rating": 4.2,
+    "phone": "9876001234",
+    "open": true,
+    "address": "NH-16, Ring Road"
+  },
+  {
+    "id": "svc_6",
+    "name": "Village Pump Repair Hub",
+    "category": "Repair Centers",
+    "specialty": "Pump and sprayer servicing",
+    "distance": 2.9,
+    "rating": 4.4,
+    "phone": "9437001122",
+    "open": true,
+    "address": "Canal Road Junction"
+  },
+  {
+    "id": "svc_7",
+    "name": "Green Soil Inputs",
+    "category": "Input Dealers",
+    "specialty": "Organic manure and micronutrients",
+    "distance": 3.3,
+    "rating": 4.6,
+    "phone": "9438123456",
+    "open": true,
+    "address": "Weekly Market Square"
+  },
+  {
+    "id": "svc_8",
+    "name": "Farmer Support Mandi",
+    "category": "Mandis",
+    "specialty": "Pulses, maize, millet",
+    "distance": 5.1,
+    "rating": 4.1,
+    "phone": "9777771234",
+    "open": true,
+    "address": "Old Highway Yard"
+  }
+]

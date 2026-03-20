@@ -1,0 +1,42 @@
+{
+  "feature_names": [
+    "N",
+    "P",
+    "K",
+    "temperature",
+    "humidity",
+    "ph",
+    "rainfall",
+    "npk_sum",
+    "np_ratio",
+    "nk_ratio",
+    "temp_humid",
+    "ph_optimal",
+    "rain_temp"
+  ],
+  "classes": [
+    "apple",
+    "banana",
+    "blackgram",
+    "chickpea",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "kidneybeans",
+    "lentil",
+    "maize",
+    "mango",
+    "mothbeans",
+    "mungbean",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "pigeonpeas",
+    "pomegranate",
+    "rice",
+    "watermelon"
+  ],
+  "input_dim": 13
+}

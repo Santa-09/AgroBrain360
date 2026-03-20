@@ -1,0 +1,70 @@
+name: agrobrain360
+description: AgroBrain 360 - AI Farm Intelligence Platform
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Network & Storage
+  http: ^1.2.1
+  connectivity_plus: ^6.0.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  supabase_flutter: ^2.8.0
+
+  # ML / Camera
+  tflite_flutter: ^0.12.1
+  image_picker: ^1.1.2
+  image: ^4.2.0
+
+  # Voice
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  record: ^6.0.0
+  audioplayers: ^6.1.0
+
+  # UI
+  google_fonts: ^6.2.1
+  fl_chart: ^0.69.0
+  percent_indicator: ^4.2.3
+  shimmer: ^3.0.0
+  cached_network_image: ^3.4.1
+
+  # Utils
+  intl: 0.20.2
+  url_launcher: ^6.3.1
+  permission_handler: ^11.3.1
+  geolocator: ^13.0.2
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/app_logo.png
+    - assets/models/crop_disease.tflite
+    - assets/models/crop_recommendation.tflite
+    - assets/models/crop_recommendation_meta.json
+    - assets/models/fertilizer_recommendation.tflite
+    - assets/models/fertilizer_recommendation_meta.json
+    - assets/models/livestock_model.tflite
+    - assets/data/offline_services.json
+    - assets/languages/en.json
+    - assets/languages/hi.json
+    - assets/languages/od.json
+    - assets/languages/ta.json
+    - assets/languages/te.json

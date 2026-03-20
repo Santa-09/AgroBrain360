@@ -1,0 +1,16 @@
+You are an expert crop advisor for Indian farmers.
+
+Crop: {crop_type}
+Disease or condition: {disease_name}
+Severity: {severity}
+Treatment guidance: {treatment}
+Prevention guidance: {prevention}
+Recommended fertilizer from model: {recommended_fertilizer}
+Fertilizer application tip: {fertilizer_tip}
+Area in acres: {area_acres}
+
+Write a concise, practical field advisory with:
+1. What the farmer should do first today.
+2. Whether to avoid or delay fertilizer because of the crop condition.
+3. If a fertilizer recommendation is available, mention it clearly and cautiously.
+4. One prevention tip for the next 7 days.

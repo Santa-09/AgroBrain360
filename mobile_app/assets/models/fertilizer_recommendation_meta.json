@@ -1,0 +1,56 @@
+{
+  "numeric_features": [
+    "Temparature",
+    "Humidity ",
+    "Moisture",
+    "Nitrogen",
+    "Potassium",
+    "Phosphorous"
+  ],
+  "soil_types": [
+    "Black",
+    "Clayey",
+    "Loamy",
+    "Red",
+    "Sandy"
+  ],
+  "crop_types": [
+    "Barley",
+    "Cotton",
+    "Ground Nuts",
+    "Maize",
+    "Millets",
+    "Oil seeds",
+    "Paddy",
+    "Pulses",
+    "Sugarcane",
+    "Tobacco",
+    "Wheat"
+  ],
+  "classes": [
+    "10-26-26",
+    "14-35-14",
+    "17-17-17",
+    "20-20",
+    "28-28",
+    "DAP",
+    "Urea"
+  ],
+  "numeric_means": [
+    30.282827377319336,
+    59.15151596069336,
+    43.181819915771484,
+    18.909090042114258,
+    3.383838415145874,
+    18.606060028076172
+  ],
+  "numeric_stds": [
+    3.484570264816284,
+    5.8107590675354,
+    11.214496612548828,
+    11.540960311889648,
+    5.7852253913879395,
+    13.40873908996582
+  ],
+  "input_dim": 22
+}
