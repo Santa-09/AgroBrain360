@@ -61,7 +61,10 @@ class Settings(BaseSettings):
     def sqlalchemy_database_url(self) -> str:
         value = self.DATABASE_URL.strip()
         if value.startswith("postgres://"):
-            return "postgresql://" + value[len("postgres://") :]
+            value = "postgresql://" + value[len("postgres://") :]
+        if value.startswith("postgresql://") and "sslmode=" not in value:
+            separator = "&" if "?" in value else "?"
+            value = f"{value}{separator}sslmode=require"
         return value
 
     def validate_production_config(self) -> None:

@@ -71,6 +71,12 @@ At minimum, set:
 - `SUPABASE_LEGACY_ANON_JWT`
 - `SUPABASE_SECRET_KEY`
 
+Important for Supabase:
+
+- Use the Supabase pooler connection string for `DATABASE_URL` on Render
+- Avoid the direct database host `db.<project-ref>.supabase.co:5432` if Render logs show `Network is unreachable`
+- The pooler URI is available in the Supabase dashboard under `Project Settings -> Database -> Connection string`
+
 Add SMTP values too if you need password reset emails:
 
 - `SMTP_HOST`
@@ -117,6 +123,7 @@ After deployment:
 1. Open the Render logs.
 2. Check that the service starts without database connection errors.
 3. If startup fails, verify `DATABASE_URL` first.
+4. If the logs show an IPv6 `Network is unreachable` error, replace the direct Supabase DB URL with the Supabase pooler URL.
 
 ## Step 8: Point the mobile app to the deployed backend
 

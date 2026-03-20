@@ -7,7 +7,7 @@ This file lists the environment variables used by the FastAPI backend in [settin
 Set these in Render before production deployment.
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
 SECRET_KEY=replace-with-a-long-random-secret
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,https://your-frontend-domain.com
 SUPABASE_URL=https://your-project.supabase.co
@@ -15,6 +15,15 @@ SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_LEGACY_ANON_JWT=your-supabase-legacy-anon-jwt
 SUPABASE_SECRET_KEY=your-supabase-service-role-or-secret-key
 ```
+
+Use the Supabase pooler connection string for Render and other hosted environments.
+Do not use the direct `db.<project-ref>.supabase.co:5432` host on Render if it resolves to an unreachable IPv6 path.
+The pooler host is available in the Supabase dashboard under:
+
+- `Project Settings`
+- `Database`
+- `Connection string`
+- choose `Transaction pooler` or the pooler URI recommended for external apps
 
 ## Optional but recommended variables
 
@@ -66,6 +75,7 @@ Notes:
 ## What each variable does
 
 - `DATABASE_URL`: PostgreSQL connection string used by SQLAlchemy.
+  On Render, prefer the Supabase pooler URL on port `6543`.
 - `SECRET_KEY`: used for password reset tokens and other signed security flows.
 - `ALLOWED_ORIGINS`: comma-separated list of allowed frontend origins for CORS.
 - `SUPABASE_URL`: Supabase project base URL.
@@ -80,7 +90,7 @@ Notes:
 ## Production example
 
 ```env
-DATABASE_URL=postgresql://postgres:strong-password@db.example.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres.example-ref:strong-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 SECRET_KEY=9f2c9a6f0d9848f0b2b2a1d4ef1d6b4f6f0e6e3a8a11b5e1
 ALLOWED_ORIGINS=https://agrobrain-web.example.com
 SUPABASE_URL=https://example.supabase.co
@@ -107,3 +117,13 @@ WHISPER_COMPUTE_TYPE=int8
 2. Do not keep real `DATABASE_URL`, `SUPABASE_SECRET_KEY`, or `SECRET_KEY` values hardcoded in source files.
 3. If secrets were already committed, rotate them before production use.
 4. Store production secrets only in Render environment variables or another secure secret manager.
+
+## Render + Supabase connectivity note
+
+If Render logs show an error like:
+
+- `Network is unreachable`
+- or the database host resolves to an IPv6 address
+
+then switch `DATABASE_URL` to the Supabase pooler connection string.
+This is the recommended fix for hosted apps that cannot reliably reach the direct database host.
