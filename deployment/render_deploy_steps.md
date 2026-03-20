@@ -46,6 +46,7 @@ Use these values:
 - Name: `agrobrain-backend`
 - Root Directory: `backend`
 - Runtime: `Python 3`
+- Python Version: `3.11.9`
 - Build Command: `pip install -r requirements.txt`
 - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
@@ -53,6 +54,7 @@ Why `backend` as the root directory:
 
 - `requirements.txt` is inside `backend/`
 - `main.py` is inside `backend/`
+- `runtime.txt` is inside `backend/` and pins Python to `3.11.9`
 - the import paths in the app are written relative to the `backend` folder
 
 ## Step 4: Add environment variables in Render
@@ -154,7 +156,8 @@ What to do:
 
 1. Retry the deploy once.
 2. Check the exact failing package in logs.
-3. If needed, pin the Render Python version in service settings.
+3. Confirm the service `Root Directory` is set to `backend` so Render can read `backend/runtime.txt`.
+4. If Render still selects a newer Python version, add `PYTHON_VERSION=3.11.9` in the service environment variables.
 
 ### Service starts but some AI features fail
 
