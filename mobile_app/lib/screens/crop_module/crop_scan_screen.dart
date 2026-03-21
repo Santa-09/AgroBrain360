@@ -33,6 +33,7 @@ class CropScanScreen extends StatefulWidget {
 }
 
 class _CropScanScreenState extends State<CropScanScreen> {
+  static final List<String> _diseasePlantOptions = TFSvc.diseasePlantNames;
   File? _img;
   bool _busy = false;
   bool _listening = false;
@@ -48,6 +49,7 @@ class _CropScanScreenState extends State<CropScanScreen> {
   final _potassiumCtrl = TextEditingController();
   final _phosphorousCtrl = TextEditingController();
   bool _usedOfflineFallback = false;
+  String? _selectedDiseasePlant;
 
   @override
   void dispose() {
@@ -98,11 +100,36 @@ class _CropScanScreenState extends State<CropScanScreen> {
     return value == key ? fallback : value;
   }
 
+  String _displayPlantName(String value) => LangSvc().displayText(value);
+
   Future<void> _pick(ImageSource src) async {
     final f =
         await _picker.pickImage(source: src, imageQuality: 85, maxWidth: 1024);
     if (f != null) {
       if (mounted) setState(() => _img = File(f.path));
+    }
+  }
+
+  String? _matchDiseasePlant(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    for (final plant in _diseasePlantOptions) {
+      if (plant.toLowerCase() == normalized) return plant;
+    }
+    for (final plant in _diseasePlantOptions) {
+      if (plant.toLowerCase().contains(normalized) ||
+          normalized.contains(plant.toLowerCase())) {
+        return plant;
+      }
+    }
+    return null;
+  }
+
+  void _setCropType(String value) {
+    final text = value.trim();
+    _cropTypeCtrl.text = text;
+    if (widget.mode == CropScanMode.diseaseDetection) {
+      _selectedDiseasePlant = _matchDiseasePlant(text);
     }
   }
 
@@ -336,7 +363,7 @@ class _CropScanScreenState extends State<CropScanScreen> {
         final data = payload['data'] as Map<String, dynamic>? ?? payload;
         final text = (data['text'] ?? '').toString().trim();
         if (text.isNotEmpty) {
-          setState(() => _cropTypeCtrl.text = text);
+          setState(() => _setCropType(text));
         } else {
           H.snack(context, _tr('noSpeechDetected', 'No speech detected'), error: true);
         }
@@ -355,7 +382,7 @@ class _CropScanScreenState extends State<CropScanScreen> {
     final started = await VoiceSvc().listen(
       onResult: (t) {
         setState(() {
-          _cropTypeCtrl.text = t;
+          _setCropType(t);
           _listening = false;
         });
       },
@@ -403,7 +430,7 @@ class _CropScanScreenState extends State<CropScanScreen> {
         final data = payload['data'] as Map<String, dynamic>? ?? payload;
         final text = (data['user_text'] ?? '').toString().trim();
         if (text.isNotEmpty) {
-          setState(() => _cropTypeCtrl.text = text);
+          setState(() => _setCropType(text));
           await VoiceSvc().setLang(LangSvc().lang);
           await VoiceSvc().speakWithFallback(
             audioUrl: data['audio_url']?.toString(),
@@ -755,19 +782,67 @@ class _CropScanScreenState extends State<CropScanScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: _cropTypeCtrl,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 14, color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                      labelText: widget.mode == CropScanMode.cropDetection
-                          ? _tr('cropNotes', 'Crop notes')
-                          : _tr('cropType', 'Crop type'),
-                    hintText: widget.mode == CropScanMode.cropDetection
-                        ? _tr('cropNotesHint', 'e.g. broad leaves, field crop, green plant')
-                        : _tr('cropTypeHint', 'e.g. Tomato, Rice, Potato'),
+                if (widget.mode == CropScanMode.cropDetection)
+                  TextField(
+                    controller: _cropTypeCtrl,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 14, color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: _tr('cropNotes', 'Crop notes'),
+                      hintText: _tr('cropNotesHint',
+                          'e.g. broad leaves, field crop, green plant'),
+                    ),
+                  )
+                else
+                  DropdownButtonFormField<String>(
+                    value: _selectedDiseasePlant,
+                    isExpanded: true,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: _tr('plantName', 'Plant name'),
+                      hintText: _tr('selectPlantName', 'Select the plant name'),
+                    ),
+                    selectedItemBuilder: (context) => _diseasePlantOptions
+                        .map(
+                          (plant) => Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _displayPlantName(plant),
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    items: _diseasePlantOptions
+                        .map(
+                          (plant) => DropdownMenuItem<String>(
+                            value: plant,
+                            child: Text(
+                              _displayPlantName(plant),
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedDiseasePlant = value;
+                        _cropTypeCtrl.text = value;
+                      });
+                    },
                   ),
-                ),
                 const SizedBox(height: 10),
                 if (widget.mode == CropScanMode.diseaseDetection)
                   TextField(

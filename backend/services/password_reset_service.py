@@ -73,9 +73,16 @@ def request_password_reset_otp(db: Session, email: str) -> dict:
         )
 
     profile = crud.get_profile_by_email(db, normalized_email)
-    user_id = profile.id if profile is not None else _get_supabase_user_id_by_email(normalized_email)
-    if user_id is None:
+    supabase_user_id = (
+        str(profile.id) if profile is not None else _get_supabase_user_id_by_email(normalized_email)
+    )
+    if supabase_user_id is None:
         raise HTTPException(status_code=404, detail="No account found for this email")
+
+    # Only persist the foreign-key user_id when a matching local profile row exists.
+    # In production, some users may exist in Supabase Auth before a local profile row
+    # has been created, and saving that auth UUID into a FK column would fail.
+    local_profile_user_id = profile.id if profile is not None else None
 
     crud.delete_password_reset_otps(db, normalized_email)
     otp = f"{secrets.randbelow(1000000):06d}"
@@ -85,7 +92,7 @@ def request_password_reset_otp(db: Session, email: str) -> dict:
     crud.create_password_reset_otp(
         db,
         email=normalized_email,
-        user_id=user_id,
+        user_id=local_profile_user_id,
         otp_hash=_hash_value(otp),
         expires_at=expires_at,
         resend_available_at=resend_available_at,

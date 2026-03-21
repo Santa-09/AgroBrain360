@@ -742,112 +742,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<String?> _pickLanguage() async {
     return showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                tr('language', 'Language'),
-                style: GoogleFonts.dmSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tr(
-                  'languageSavedAfterSignOut',
-                  'Applied across all modules and kept after sign out.',
-                ),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              const SizedBox(height: 18),
-              ...LangSvc.supported.entries.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(ctx, entry.key),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _lang == entry.key
-                            ? AppColors.primaryFaint
-                            : AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: _lang == entry.key
-                              ? AppColors.primary
-                              : AppColors.border,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            _languageFlag(entry.key),
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) {
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.72;
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    tr('language', 'Language'),
+                    style: GoogleFonts.dmSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    tr(
+                      'languageSavedAfterSignOut',
+                      'Applied across all modules and kept after sign out.',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: LangSvc.supported.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final entry = LangSvc.supported.entries.elementAt(index);
+                        return GestureDetector(
+                          onTap: () => Navigator.pop(ctx, entry.key),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _lang == entry.key
+                                  ? AppColors.primaryFaint
+                                  : AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: _lang == entry.key
+                                    ? AppColors.primary
+                                    : AppColors.border,
+                              ),
+                            ),
+                            child: Row(
                               children: [
                                 Text(
-                                  _nativeLanguageName(entry.key),
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
+                                  _languageFlag(entry.key),
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _nativeLanguageName(entry.key),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        _languageName(entry.key),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 11,
+                                          color: AppColors.textTertiary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  _languageName(entry.key),
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 11,
-                                    color: AppColors.textTertiary,
+                                if (_lang == entry.key)
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.primary,
+                                    size: 18,
                                   ),
-                                ),
                               ],
                             ),
                           ),
-                          if (_lang == entry.key)
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

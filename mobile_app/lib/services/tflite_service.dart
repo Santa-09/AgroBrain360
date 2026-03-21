@@ -69,6 +69,24 @@ class TFSvc {
     'Tomato___healthy',
   ];
 
+  static final List<String> diseasePlantNames = () {
+    final seen = <String>{};
+    final plants = <String>[];
+    for (final label in diseaseLabels) {
+      final raw = label.split('___').first.replaceAll('_', ' ').replaceAll(',', '');
+      final normalized = raw
+          .split(' ')
+          .where((part) => part.trim().isNotEmpty)
+          .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+          .join(' ');
+      if (normalized.isNotEmpty && seen.add(normalized)) {
+        plants.add(normalized);
+      }
+    }
+    plants.sort();
+    return plants;
+  }();
+
   static const livestockLabels = [
     'foot-and-mouth',
     'healthy',
