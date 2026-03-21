@@ -25,11 +25,19 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
   final List<_ChatBubbleData> _messages = [];
   bool _sending = false;
   bool _listening = false;
+  bool _backendRecording = false;
+  String? _lastAudioUrl;
 
   String tr(String key, String fallback) {
     final value = LangSvc().t(key);
     return value == key ? fallback : value;
   }
+
+  String _display(String value) => LangSvc().displayText(value);
+
+  String _screenTitle() => widget.args.module == 'assistant'
+      ? tr('aiHelpCenter', 'AI Help Center')
+      : _display(widget.args.title);
 
   @override
   void initState() {
@@ -49,6 +57,7 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     unawaited(VoiceSvc().stop());
+    unawaited(VoiceSvc().cancelBackendRecording());
     super.dispose();
   }
 
@@ -85,7 +94,11 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
     if (response.ok && response.data != null) {
       final payload =
           response.data!['data'] as Map<String, dynamic>? ?? response.data!;
-      final answer = (payload['ai_response'] ?? '').toString().trim();
+      final answer = (payload['ai_response'] ?? '')
+          .toString()
+          .replaceAll('**', '')
+          .trim();
+      _lastAudioUrl = payload['audio_url']?.toString();
       setState(() {
         _messages.add(
           _ChatBubbleData.bot(
@@ -98,6 +111,7 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
       });
       _scrollToBottom();
     } else {
+      _lastAudioUrl = null;
       setState(() {
         _messages.add(
           _ChatBubbleData.bot(
@@ -112,6 +126,36 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
   }
 
   Future<void> _toggleVoice() async {
+    if (_backendRecording) {
+      final response = await VoiceSvc().stopBackendRecordingAndTranscribe(
+        lang: LangSvc().lang,
+      );
+      if (!mounted) return;
+      setState(() {
+        _backendRecording = false;
+        _listening = false;
+      });
+      if (response.ok && response.data != null) {
+        final text = (response.data!['text'] ?? '').toString().trim();
+        if (text.isNotEmpty) {
+          _inputCtrl.text = text;
+        } else {
+          H.snack(
+            context,
+            tr('noSpeechDetected', 'No speech detected. Please try again.'),
+            error: true,
+          );
+        }
+      } else {
+        H.snack(
+          context,
+          response.error ?? tr('voiceFailed', 'Voice capture failed'),
+          error: true,
+        );
+      }
+      return;
+    }
+
     if (_listening) {
       await VoiceSvc().stop();
       if (mounted) {
@@ -133,12 +177,25 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
     );
 
     if (!started && mounted) {
-      setState(() => _listening = false);
-      H.snack(
-        context,
-        tr('voiceUnavailable', 'Voice input is unavailable right now'),
-        error: true,
-      );
+      final backendStarted = await VoiceSvc().startBackendRecording();
+      if (!mounted) return;
+      if (backendStarted) {
+        setState(() {
+          _listening = false;
+          _backendRecording = true;
+        });
+        H.snack(
+          context,
+          tr('recordingAiVoice', 'Recording... tap again to finish'),
+        );
+      } else {
+        setState(() => _listening = false);
+        H.snack(
+          context,
+          tr('voiceUnavailable', 'Voice input is unavailable right now'),
+          error: true,
+        );
+      }
     }
   }
 
@@ -158,10 +215,11 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
     final summary = <String>[];
     widget.args.context.forEach((key, value) {
       if (value == null) return;
+      if (key == 'image_url' || key == 'entry') return;
       final text = value is List ? value.join(', ') : value.toString();
       if (text.trim().isEmpty) return;
-      if (key == 'image_url') return;
-      summary.add('${key.replaceAll('_', ' ')}: $text');
+      final label = _display(key.replaceAll('_', ' '));
+      summary.add('$label: ${_display(text)}');
     });
     return summary.take(6).toList();
   }
@@ -176,10 +234,9 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: Text(
-          tr(
-            widget.args.module == 'assistant' ? 'aiHelpCenter' : 'aiAdvisory',
-            widget.args.module == 'assistant' ? 'AI Help Center' : 'AI Advisory',
-          ),
+          widget.args.module == 'assistant'
+              ? _screenTitle()
+              : tr('aiAdvisory', 'AI Advisory'),
           style: GoogleFonts.dmSans(fontWeight: FontWeight.w700),
         ),
       ),
@@ -197,7 +254,7 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.args.title,
+                  _screenTitle(),
                   style: GoogleFonts.dmSans(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -335,7 +392,10 @@ class _AiCaseChatScreenState extends State<AiCaseChatScreen> {
               onPressed: () async {
                 final botText = _messages.lastWhere((m) => !m.isUser).text;
                 await VoiceSvc().setLang(LangSvc().lang);
-                await VoiceSvc().speak(botText);
+                await VoiceSvc().speakWithFallback(
+                  audioUrl: _lastAudioUrl,
+                  fallbackText: botText,
+                );
               },
               child: const Icon(Icons.volume_up_rounded),
             )

@@ -113,16 +113,10 @@ def get_optional_user_id(
     if credentials is None:
         return None
     if credentials.scheme.lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization scheme",
-        )
+        return None
 
     try:
         claims = _verify_supabase_token(credentials.credentials)
         return _extract_user_id(claims)
-    except (AuthError, httpx.HTTPError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-        ) from exc
+    except (AuthError, httpx.HTTPError):
+        return None

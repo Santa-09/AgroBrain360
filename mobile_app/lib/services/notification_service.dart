@@ -1,4 +1,5 @@
 import 'local_db_service.dart';
+import 'language_service.dart';
 
 enum AppNotifType { alert, tip, income, fhi, vet, sync, service, machinery }
 
@@ -34,6 +35,11 @@ class NotificationSvc {
   factory NotificationSvc() => _i;
   NotificationSvc._();
 
+  String _t(String key, String fallback) {
+    final value = LangSvc().t(key);
+    return value == key ? fallback : value;
+  }
+
   List<AppNotif> list() {
     final notifications = <AppNotif>[];
     final scans = DB.getScans();
@@ -50,8 +56,15 @@ class NotificationSvc {
           AppNotif(
             id: 'sync_${pending.length}_${latestQueuedAt.toIso8601String()}',
             type: AppNotifType.sync,
-            title: 'Offline Sync Pending',
-            body: '${pending.length} record${pending.length == 1 ? '' : 's'} waiting to sync when internet is available.',
+            title: _t('offlineSyncPending', 'Offline Sync Pending'),
+            body: LangSvc().format(
+              'offlineSyncPendingBody',
+              '{value} record(s) waiting to sync when internet is available.',
+              pending.length,
+            ).replaceFirst(
+              'record(s)',
+              pending.length == 1 ? 'record' : 'records',
+            ),
             time: latestQueuedAt,
             read: false,
           ),
@@ -68,10 +81,10 @@ class NotificationSvc {
           AppNotif(
             id: 'fhi_${updatedAt.toIso8601String()}',
             type: AppNotifType.fhi,
-            title: 'Farm Health Score Updated',
+            title: _t('farmHealthScoreUpdated', 'Farm Health Score Updated'),
             body: recommendations.isNotEmpty
-                ? 'FHI is $overall. ${recommendations.first}'
-                : 'Your latest Farm Health Index is $overall.',
+                ? '${_t('fhiIs', 'FHI is')} $overall. ${LangSvc().displayText(recommendations.first)}'
+                : '${_t('latestFarmHealthIndex', 'Your latest Farm Health Index is')} $overall.',
             time: updatedAt,
             read: updatedAt.isBefore(DateTime.now().subtract(const Duration(days: 2))),
           ),
@@ -106,8 +119,11 @@ class NotificationSvc {
           AppNotif(
             id: 'welcome_activity',
             type: AppNotifType.tip,
-            title: 'Start Your First Scan',
-            body: 'Notifications will adapt to your crop, livestock, machinery, and farm health activity.',
+            title: _t('startYourFirstScan', 'Start Your First Scan'),
+            body: _t(
+              'notificationsAdaptBody',
+              'Notifications will adapt to your crop, livestock, machinery, and farm health activity.',
+            ),
             time: DateTime.now(),
             read: false,
           ),
@@ -144,21 +160,23 @@ class NotificationSvc {
       };
 
   String _scanTitle(String type, String title) => switch (type) {
-        'livestock' => 'Livestock Check Saved',
-        'machinery' => 'Machinery Update Saved',
-        'residue' => 'Residue Income Update',
-        _ => title.isNotEmpty ? title : 'Crop Section Scan Saved',
+        'livestock' => _t('livestockCheckSaved', 'Livestock Check Saved'),
+        'machinery' => _t('machineryUpdateSaved', 'Machinery Update Saved'),
+        'residue' => _t('residueIncomeUpdate', 'Residue Income Update'),
+        _ => title.isNotEmpty ? LangSvc().displayText(title) : _t('cropScanSaved', 'Crop Section Scan Saved'),
       };
 
   String _scanBody(String type, String title, String result) {
     if (result.isNotEmpty) {
-      return '$title ${title.isEmpty ? '' : '- '}Result: $result'.trim();
+      final translatedTitle = title.isEmpty ? '' : LangSvc().displayText(title);
+      final translatedResult = LangSvc().displayText(result);
+      return '$translatedTitle ${translatedTitle.isEmpty ? '' : '- '}${_t('resultLabel', 'Result')}: $translatedResult'.trim();
     }
     return switch (type) {
-      'livestock' => 'Your latest livestock diagnosis was added to history.',
-      'machinery' => 'Your latest machinery recommendation and maintenance status were saved.',
-      'residue' => 'Your latest residue income analysis is available in history.',
-      _ => 'Your latest crop analysis is available in history.',
+      'livestock' => _t('livestockHistoryNotice', 'Your latest livestock diagnosis was added to history.'),
+      'machinery' => _t('machineryHistoryNotice', 'Your latest machinery recommendation and maintenance status were saved.'),
+      'residue' => _t('residueHistoryNotice', 'Your latest residue income analysis is available in history.'),
+      _ => _t('cropHistoryNotice', 'Your latest crop analysis is available in history.'),
     };
   }
 }

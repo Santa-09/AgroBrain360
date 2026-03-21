@@ -6,6 +6,7 @@ import '../../core/utils/helpers.dart';
 import '../../models/ai_case_chat_args.dart';
 import '../../routes/app_routes.dart';
 import '../../services/language_service.dart';
+import '../../services/voice_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_card.dart';
 
@@ -32,11 +33,21 @@ class LivestockResultScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _speakAdvice(BuildContext context, String text) async {
+    final clean = text.replaceAll('**', '').trim();
+    if (clean.isEmpty) return;
+    await VoiceSvc().setLang(LangSvc().lang);
+    await VoiceSvc().speak(clean);
+    if (context.mounted) {
+      H.snack(context, t('voiceProcessed'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final meds = List<String>.from(data['medicines'] ?? []);
     final steps = _parseSteps(data['first_aid_protocol'] as String? ?? '');
-    final advisory = data['advisory'] as String?;
+    final advisory = (data['advisory'] as String?)?.replaceAll('**', '');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -158,6 +169,12 @@ class LivestockResultScreen extends StatelessWidget {
                             fontSize: 13,
                             color: AppColors.textSecondary,
                             height: 1.6)),
+                    const SizedBox(height: 12),
+                    Btn.outline(
+                        label: t('speakAdvice'),
+                        icon: Icons.volume_up_rounded,
+                        fg: AppColors.tealDark,
+                        onTap: () => _speakAdvice(context, advisory)),
                   ])),
               const SizedBox(height: 12),
             ],

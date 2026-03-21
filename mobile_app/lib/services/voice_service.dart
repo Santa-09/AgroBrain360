@@ -27,6 +27,7 @@ class VoiceSvc {
   bool _ready = false;
   bool _listening = false;
   bool _backendRecording = false;
+  List<LocaleName> _availableLocales = const [];
   String? _recordingPath;
   bool _enabled = true;
   bool get listening => _listening;
@@ -55,7 +56,7 @@ class VoiceSvc {
     try {
       final mic = await Permission.microphone.request();
       if (!mic.isGranted) return false;
-      return await _stt.initialize(
+      final ready = await _stt.initialize(
         onError: (_) => _listening = false,
         onStatus: (status) {
           if (status == 'done' || status == 'notListening') {
@@ -63,14 +64,25 @@ class VoiceSvc {
           }
         },
       );
+      if (ready) {
+        try {
+          _availableLocales = await _stt.locales();
+        } catch (_) {
+          _availableLocales = const [];
+        }
+      }
+      return ready;
     } catch (_) {
       return false;
     }
   }
 
   Future<void> setLang(String code) async {
-    final map = {'hi': 'hi-IN', 'ta': 'ta-IN', 'te': 'te-IN', 'od': 'or-IN'};
-    await _tts.setLanguage(map[code] ?? 'en-IN');
+    try {
+      await _tts.setLanguage(_bestTtsLocale(code));
+    } catch (_) {
+      await _tts.setLanguage('en-IN');
+    }
   }
 
   Future<bool> listen({
@@ -82,31 +94,90 @@ class VoiceSvc {
       _ready = await _initializeSpeech();
     }
     if (!_ready) return false;
-    final locales = {
-      'hi': 'hi_IN',
-      'ta': 'ta_IN',
-      'te': 'te_IN',
-      'od': 'or_IN',
-    };
-
     try {
-      final started = await _stt.listen(
-        onResult: (r) {
-          if (r.finalResult) {
-            onResult(r.recognizedWords);
-            _listening = false;
-          }
-        },
-        localeId: locales[lang] ?? 'en_IN',
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
-      );
+      Future<bool> startListen({String? localeId}) async {
+        final started = await _stt.listen(
+          onResult: (r) {
+            if (r.finalResult) {
+              onResult(r.recognizedWords);
+              _listening = false;
+            }
+          },
+          localeId: localeId,
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+        );
+        return started == true;
+      }
+
+      bool started;
+      try {
+        started = await startListen(localeId: _bestSttLocale(lang));
+      } catch (_) {
+        started = await startListen();
+      }
       _listening = started;
       return started;
     } catch (_) {
       _listening = false;
       return false;
     }
+  }
+
+  String _bestSttLocale(String code) {
+    final preferred = <String>[
+      switch (code) {
+        'hi' => 'hi_IN',
+        'od' => 'or_IN',
+        'ta' => 'ta_IN',
+        'te' => 'te_IN',
+        _ => 'en_IN',
+      },
+      switch (code) {
+        'hi' => 'hi-IN',
+        'od' => 'or-IN',
+        'ta' => 'ta-IN',
+        'te' => 'te-IN',
+        _ => 'en-IN',
+      },
+    ];
+
+    final ids = _availableLocales.map((locale) => locale.localeId).toList();
+    for (final candidate in preferred) {
+      if (ids.contains(candidate)) return candidate;
+    }
+
+    final prefixes = <String>[
+      switch (code) {
+        'hi' => 'hi',
+        'od' => 'or',
+        'ta' => 'ta',
+        'te' => 'te',
+        _ => 'en',
+      },
+      'en',
+    ];
+
+    for (final prefix in prefixes) {
+      for (final locale in _availableLocales) {
+        final normalized = locale.localeId.toLowerCase().replaceAll('-', '_');
+        if (normalized.startsWith('${prefix.toLowerCase()}_')) {
+          return locale.localeId;
+        }
+      }
+    }
+
+    return 'en_IN';
+  }
+
+  String _bestTtsLocale(String code) {
+    return switch (code) {
+      'hi' => 'hi-IN',
+      'od' => 'or-IN',
+      'ta' => 'ta-IN',
+      'te' => 'te-IN',
+      _ => 'en-IN',
+    };
   }
 
   Future<void> stop() async {
@@ -300,7 +371,12 @@ class VoiceSvc {
     File file,
     Map<String, String> fields,
   ) async {
-    final primary = await ApiSvc().multipart(primaryUrl, file, fields);
+    final primary = await ApiSvc().multipart(
+      primaryUrl,
+      file,
+      fields,
+      ApiK.voiceTimeoutMs,
+    );
     if (primary.ok) return primary;
 
     final shouldTryLocal = !ApiK.useLocal &&
@@ -309,6 +385,11 @@ class VoiceSvc {
             (primary.error?.contains('Error 404') ?? false));
     if (!shouldTryLocal) return primary;
 
-    return ApiSvc().multipart(localUrl, file, fields);
+    return ApiSvc().multipart(
+      localUrl,
+      file,
+      fields,
+      ApiK.voiceTimeoutMs,
+    );
   }
 }

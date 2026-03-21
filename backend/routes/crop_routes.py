@@ -10,6 +10,27 @@ from utils.auth import get_optional_user_id
 
 router = APIRouter(prefix="/crop", tags=["Crop Section"])
 
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "image/webp",
+}
+ALLOWED_IMAGE_EXTENSIONS = {
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".webp",
+}
+
+
+def _is_allowed_image_upload(file: UploadFile) -> bool:
+    if file.content_type in ALLOWED_IMAGE_TYPES:
+        return True
+
+    filename = (file.filename or "").lower()
+    return any(filename.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS)
+
 
 @router.post("/predict")
 async def predict_crop_disease(
@@ -20,11 +41,14 @@ async def predict_crop_disease(
     db: Session = Depends(get_db),
     user_id=Depends(get_optional_user_id),
 ):
-    if file.content_type not in ("image/jpeg", "image/png", "image/jpg"):
-        raise HTTPException(status_code=400, detail="Only JPEG/PNG images accepted")
+    if not _is_allowed_image_upload(file):
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG, PNG, or WEBP images are accepted",
+        )
 
     image_bytes = await file.read()
-    result      = crop_service.analyze_disease(image_bytes)
+    result      = crop_service.analyze_disease(image_bytes, language=lang)
     roi         = roi_service.calculate_roi(result["disease"], crop_type, area_acres)
 
     if user_id is not None:

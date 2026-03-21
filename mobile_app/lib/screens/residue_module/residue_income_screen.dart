@@ -5,6 +5,7 @@ import '../../core/utils/helpers.dart';
 import '../../models/ai_case_chat_args.dart';
 import '../../routes/app_routes.dart';
 import '../../services/language_service.dart';
+import '../../services/voice_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_card.dart';
 
@@ -34,6 +35,21 @@ class ResidueIncomeScreen extends StatelessWidget {
         context: data,
       ),
     );
+  }
+
+  Future<void> _speakSummary(BuildContext context) async {
+    final summary = [
+      if (_best.isNotEmpty) '${t('bestIncomeOption')}: $_best.',
+      if (_earn > 0) '${t('projectedEarnings')}: ${H.rupees(_earn)}.',
+      if ((data['description'] as String?)?.trim().isNotEmpty == true)
+        (data['description'] as String).trim(),
+    ].join(' ');
+    if (summary.trim().isEmpty) return;
+    await VoiceSvc().setLang(LangSvc().lang);
+    await VoiceSvc().speak(summary);
+    if (context.mounted) {
+      H.snack(context, t('voiceProcessed'));
+    }
   }
 
   @override
@@ -215,6 +231,12 @@ class ResidueIncomeScreen extends StatelessWidget {
                               fontSize: 13,
                               color: AppColors.textSecondary,
                               height: 1.6)),
+                      const SizedBox(height: 12),
+                      Btn.outline(
+                          label: t('speakAdvice'),
+                          icon: Icons.volume_up_rounded,
+                          fg: AppColors.purpleDark,
+                          onTap: () => _speakSummary(context)),
                     ])),
 
               const SizedBox(height: 20),

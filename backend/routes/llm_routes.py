@@ -1,6 +1,6 @@
 # backend/routes/llm_routes.py
 from fastapi import APIRouter, HTTPException
-from services import llm_service, response_service, translation_service
+from services import llm_service, response_service
 from schemas.intent_schema import LLMAdviseRequest, RealtimeSessionRequest
 
 router = APIRouter(prefix="/llm", tags=["LLM Advisory"])
@@ -9,9 +9,13 @@ router = APIRouter(prefix="/llm", tags=["LLM Advisory"])
 @router.post("/advise")
 async def get_llm_advice(body: LLMAdviseRequest):
     prompt   = llm_service.build_prompt(body.module, body.data)
-    advice   = await llm_service.generate(prompt, language=body.language)
-    translated = translation_service.translate(advice, body.language)
-    return response_service.build({"advice": translated}, lang=body.language)
+    advice   = await llm_service.generate(
+        prompt,
+        language=body.language,
+        module=body.module,
+        data=body.data,
+    )
+    return response_service.build({"advice": advice}, lang=body.language)
 
 
 @router.post("/realtime/session")

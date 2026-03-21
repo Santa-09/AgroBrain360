@@ -81,7 +81,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         const AiCaseChatScreen(
           args: AiCaseChatArgs(
             module: 'assistant',
-            title: 'AI Help Center',
+            title: 'aiHelpCenter',
             context: {'entry': 'global_help_center'},
           ),
         ),

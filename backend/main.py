@@ -19,6 +19,7 @@ from routes.llm_routes import router as llm_router
 from routes.sync_routes import router as sync_router
 from routes.service_routes import router as service_router
 from routes.voice_route import router as voice_router
+from services.coqui_tts_service import preload as preload_tts
 from services.ml_service import load_all_models
 from database.connection import init_db
 
@@ -28,7 +29,9 @@ async def lifespan(app: FastAPI):
     """Load ML models once when the API starts."""
     settings.validate_production_config()
     init_db()
-    load_all_models()
+    if settings.PRELOAD_MODELS:
+        load_all_models()
+        preload_tts()
     yield
 
 app = FastAPI(

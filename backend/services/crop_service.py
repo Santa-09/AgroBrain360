@@ -1,5 +1,5 @@
 # backend/services/crop_service.py
-from services import ml_service
+from services import ml_service, translation_service
 
 DISEASE_ADVICE = {
     "Tomato___Early_blight": {
@@ -50,7 +50,37 @@ DISEASE_ADVICE = {
 }
 
 
-def analyze_disease(image_bytes: bytes) -> dict:
+def _humanize_disease_label(label: str) -> str:
+    if not label:
+        return "Unknown"
+
+    crop, _, disease = label.partition("___")
+    crop = crop.replace("_", " ").replace(",", "").replace("(", " ").replace(")", " ")
+    crop = " ".join(part for part in crop.split() if part)
+    disease = disease.replace("_", " ").replace("(", " ").replace(")", " ")
+    disease = " ".join(part for part in disease.split() if part)
+
+    if not disease:
+        return crop.title() if crop else "Unknown"
+    if disease.lower() == "healthy":
+        return f"{crop.title()} Healthy".strip()
+    return f"{crop.title()} - {disease.title()}".strip()
+
+
+def _translate_payload(payload: dict, language: str) -> dict:
+    language = translation_service.normalize_language_code(language)
+    if language == "en":
+        return payload
+
+    translated = dict(payload)
+    for key in ("disease_display", "severity", "risk_level", "treatment", "prevention"):
+        value = translated.get(key)
+        if isinstance(value, str) and value.strip():
+            translated[key] = translation_service.translate(value, language)
+    return translated
+
+
+def analyze_disease(image_bytes: bytes, language: str = "en") -> dict:
     result  = ml_service.predict_crop_disease(image_bytes)
     disease = result["disease"]
     advice  = DISEASE_ADVICE.get(disease, {
@@ -59,14 +89,16 @@ def analyze_disease(image_bytes: bytes) -> dict:
         "treatment":  "Consult your local agriculture officer.",
         "prevention": "Monitor crop regularly.",
     })
-    return {
+    payload = {
         "disease":    disease,
+        "disease_display": _humanize_disease_label(disease),
         "confidence": result["confidence"],
         **advice,
     }
+    return _translate_payload(payload, language)
 
 
-def recommend_fertilizer(features: dict) -> dict:
+def recommend_fertilizer(features: dict, language: str = "en") -> dict:
     result = ml_service.predict_fertilizer_recommendation(features)
     fertilizer = result["fertilizer"]
 
@@ -107,7 +139,17 @@ def recommend_fertilizer(features: dict) -> dict:
         },
     )
 
-    return {
+    payload = {
         **result,
         **fertilizer_guidance,
     }
+    language = translation_service.normalize_language_code(language)
+    if language == "en":
+        return payload
+
+    translated = dict(payload)
+    for key in ("fertilizer", "application_tip", "summary"):
+        value = translated.get(key)
+        if isinstance(value, str) and value.strip():
+            translated[key] = translation_service.translate(value, language)
+    return translated

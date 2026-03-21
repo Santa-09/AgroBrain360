@@ -75,6 +75,15 @@ def load_all_models() -> None:
     _load_keras("disease")
 
 
+def _ensure_model_loaded(name: str) -> None:
+    if name in _models:
+        return
+    if name == "disease":
+        _load_keras(name)
+        return
+    _load_pkl(name)
+
+
 def _existing_nonempty_path(*paths: str) -> str | None:
     for path in paths:
         normalized = os.path.normpath(path)
@@ -221,6 +230,7 @@ def _load_keras(name: str) -> None:
 
 def predict_crop_disease(image_bytes: bytes) -> dict:
     """Run disease model on uploaded image bytes."""
+    _ensure_model_loaded("disease")
     model = _models.get("disease")
     if model is None:
         raise RuntimeError("Disease model not loaded")
@@ -239,6 +249,7 @@ def predict_crop_disease(image_bytes: bytes) -> dict:
 
 
 def predict_livestock(animal_type: str, symptoms: str) -> dict:
+    _ensure_model_loaded("livestock")
     bundle = _models.get("livestock")
     if bundle is None:
         bundle = _make_livestock_fallback_bundle()
@@ -294,6 +305,7 @@ def _predict_livestock_fallback(animal_type: str, symptoms: str) -> dict:
 
 
 def predict_intent(query: str) -> dict:
+    _ensure_model_loaded("intent")
     bundle = _models.get("intent")
     if bundle is None:
         raise RuntimeError("Intent model not loaded")
@@ -314,6 +326,7 @@ def predict_intent(query: str) -> dict:
 
 
 def predict_crop_recommendation(features: np.ndarray) -> dict:
+    _ensure_model_loaded("crop_recommendation")
     bundle = _models.get("crop_recommendation")
     if bundle is None:
         raise RuntimeError("Crop recommendation model not loaded")
@@ -365,6 +378,7 @@ def build_crop_recommendation_features(
 
 
 def predict_fertilizer_recommendation(features: dict) -> dict:
+    _ensure_model_loaded("fertilizer_recommendation")
     bundle = _models.get("fertilizer_recommendation")
     if bundle is None:
         raise RuntimeError("Fertilizer recommendation model not loaded")

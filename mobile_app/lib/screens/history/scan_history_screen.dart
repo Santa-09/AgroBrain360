@@ -233,7 +233,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    scan['title'] as String? ?? t('scan', 'Scan'),
+                    H.displayText(scan['title'] as String? ?? t('scan', 'Scan')),
                     style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -255,7 +255,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          type.toUpperCase(),
+                          H.displayText(_filterLabel(_filter == 'All' ? type : _filter)),
                           style: GoogleFonts.dmSans(
                             color: color,
                             fontSize: 9,
@@ -289,7 +289,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  scan['result'] as String,
+                  H.displayText(scan['result'] as String),
                   style: GoogleFonts.dmSans(
                     color: color,
                     fontSize: 11,

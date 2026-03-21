@@ -100,8 +100,8 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen> {
         DateTime.now().millisecondsSinceEpoch.toString(),
         {
           'type': 'crop',
-          'title': result['crop']?.toString() ?? t('unknownLabel'),
-          'result': 'Recommended',
+          'title': H.displayText(result['crop']?.toString() ?? t('unknownLabel')),
+          'result': t('recommendedLabel'),
           'ts': DateTime.now().toIso8601String(),
           'source': result['source'],
         },

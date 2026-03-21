@@ -33,15 +33,18 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     GROQ_STT_MODEL: str = "whisper-large-v3"
-    MODEL_NAME: str = "llama3-8b-8192"
-    ELEVENLABS_API_KEY: str = ""
-    ELEVENLABS_BASE_URL: str = "https://api.elevenlabs.io/v1"
-    VOICE_ID: str = ""
-    ELEVENLABS_MODEL_ID: str = "eleven_multilingual_v2"
+    MODEL_NAME: str = "llama-3.1-8b-instant"
+    COQUI_TTS_MODEL: str = "tts_models/en/vctk/vits"
+    COQUI_TTS_SPEAKER: str = "p225"
+    COQUI_TTS_PYTHON: str = ""
     APP_ENV: str = "development"
+    PRELOAD_MODELS: bool = False
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(
+            str(Path(__file__).resolve().parents[1] / ".env"),
+            str(Path(__file__).resolve().parents[2] / ".env"),
+        ),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -78,8 +81,6 @@ class Settings(BaseSettings):
             "SUPABASE_URL": self.SUPABASE_URL,
             "SUPABASE_SECRET_KEY": self.SUPABASE_SECRET_KEY,
             "GROQ_API_KEY": self.GROQ_API_KEY,
-            "ELEVENLABS_API_KEY": self.ELEVENLABS_API_KEY,
-            "VOICE_ID": self.VOICE_ID,
             "SMTP_PASSWORD": self.SMTP_PASSWORD or "",
         }
         missing = [key for key, value in required_values.items() if not str(value).strip()]

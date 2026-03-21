@@ -69,26 +69,56 @@ class _LivestockInputScreenState extends State<LivestockInputScreen> {
 
   Future<void> _toggleVoice() async {
     if (_backendRecording) {
-      await VoiceSvc().cancelBackendRecording();
-      if (mounted) setState(() => _backendRecording = false);
+      setState(() => _busy = true);
+      final res = await VoiceSvc().stopBackendRecordingAndTranscribe(
+        lang: LangSvc().lang,
+        detectIntent: false,
+        prompt: 'Animal type: $_animal. Transcribe the farmer symptoms clearly.',
+      );
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _backendRecording = false;
+      });
+      if (res.ok && res.data != null) {
+        final payload = res.data!;
+        final data = payload['data'] as Map<String, dynamic>? ?? payload;
+        final text = (data['text'] ?? '').toString().trim();
+        if (text.isNotEmpty) {
+          setState(() => _sympCtrl.text = text);
+        } else {
+          H.snack(context, t('noSpeechDetected'), error: true);
+        }
+      } else {
+        H.snack(context, res.error ?? t('voiceFailed'), error: true);
+      }
+      return;
     }
     if (_listening) {
       await VoiceSvc().stop();
       setState(() => _listening = false);
-    } else {
-      setState(() => _listening = true);
-      final started = await VoiceSvc().listen(
-        onResult: (text) {
-          setState(() {
-            _sympCtrl.text = text;
-            _listening = false;
-          });
-        },
-        lang: LangSvc().lang,
-      );
-      if (!started && mounted) {
-        setState(() => _listening = false);
-        H.snack(context, 'Voice input is unavailable right now', error: true);
+      return;
+    }
+
+    setState(() => _listening = true);
+    final started = await VoiceSvc().listen(
+      onResult: (text) {
+        setState(() {
+          _sympCtrl.text = text;
+          _listening = false;
+        });
+      },
+      lang: LangSvc().lang,
+    );
+    if (!started && mounted) {
+      setState(() => _listening = false);
+      final backendStarted = await VoiceSvc().startBackendRecording();
+      if (!mounted) return;
+      if (backendStarted) {
+        setState(() => _backendRecording = true);
+        H.snack(context, t('recordingAiVoice'));
+      } else {
+        H.snack(context, t('voiceUnavailable'), error: true);
       }
     }
   }
@@ -198,7 +228,7 @@ class _LivestockInputScreenState extends State<LivestockInputScreen> {
       await DB.saveScan(DateTime.now().millisecondsSinceEpoch.toString(), {
         'type': 'livestock',
         'title':
-            '$_animal - ${_sympCtrl.text.trim().split(' ').take(3).join(' ')}...',
+            '${LangSvc().displayAnimal(_animal)} - ${_sympCtrl.text.trim().split(' ').take(3).join(' ')}...',
         'result': H.cap(result['health_risk'] ?? 'Diagnosed'),
         'ts': DateTime.now().toIso8601String(),
       });
@@ -242,7 +272,7 @@ class _LivestockInputScreenState extends State<LivestockInputScreen> {
 
     if (llm.ok && llm.data != null) {
       final llmPayload = llm.data!['data'] as Map<String, dynamic>? ?? llm.data!;
-      advisory = llmPayload['advice']?.toString();
+      advisory = llmPayload['advice']?.toString().replaceAll('**', '');
     }
 
     return {
@@ -427,7 +457,7 @@ class _LivestockInputScreenState extends State<LivestockInputScreen> {
                             ),
                           ),
                           child: Text(
-                            _animals[i],
+                            LangSvc().displayAnimal(_animals[i]),
                             style: GoogleFonts.dmSans(
                               color: selected
                                   ? Colors.white

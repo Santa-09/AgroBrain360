@@ -1,7 +1,13 @@
 import logging
 from typing import Any
 
-from services import eleven_service, groq_service, intent_service, llm_service
+from services import (
+    coqui_tts_service,
+    groq_service,
+    intent_service,
+    llm_service,
+    translation_service,
+)
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +21,7 @@ async def transcribe_audio(
     prompt: str | None = None,
     detect_intent: bool = False,
 ) -> dict[str, Any]:
+    language = translation_service.normalize_language_code(language)
     result = await groq_service.speech_to_text(
         content,
         filename=filename,
@@ -28,7 +35,10 @@ async def transcribe_audio(
         "language": result.get("language") or language,
     }
     if detect_intent and payload["text"]:
-        payload.update(intent_service.classify_intent(payload["text"]))
+        try:
+            payload.update(intent_service.classify_intent(payload["text"]))
+        except Exception as exc:
+            log.warning("Intent detection failed for voice transcript: %s", exc)
     return payload
 
 
@@ -60,6 +70,7 @@ async def run_voice_pipeline(
     context: dict[str, Any] | None = None,
     detect_intent: bool = True,
 ) -> dict[str, Any]:
+    language = translation_service.normalize_language_code(language)
     transcription = await transcribe_audio(
         filename=filename,
         content=content,
@@ -72,30 +83,48 @@ async def run_voice_pipeline(
     if not user_text:
         raise RuntimeError("No speech detected in uploaded audio")
 
-    ai = await groq_service.generate_response(
-        build_voice_prompt(
-            module=module,
-            transcript=user_text,
-            context=context,
-        ),
-        system_prompt=(
-            "You are AgroBrain360, an agricultural voice assistant for Indian farmers. "
-            f"Respond in {language}. Be practical, calm, and action-oriented."
-        ),
+    voice_prompt = build_voice_prompt(
         module=module,
-        language=language,
+        transcript=user_text,
         context=context,
     )
-    ai_response = ai["text"].strip()
+
+    llm_source = None
+    try:
+        ai = await groq_service.generate_response(
+            voice_prompt,
+            system_prompt=(
+                "You are AgroBrain360, an agricultural voice assistant for Indian farmers. "
+                f"Respond in {language}. Be practical, calm, and action-oriented."
+            ),
+            module=module,
+            language=language,
+            context=context,
+        )
+        llm_source = ai.get("model")
+        ai_text = llm_service.clean_advisory_text(ai["text"].strip())
+    except Exception as exc:
+        log.warning("Primary voice LLM call failed, using fallback text response: %s", exc)
+        ai_text = llm_service.clean_advisory_text(
+            await llm_service.generate(
+                voice_prompt,
+                language=language,
+                module=module,
+                data={"voice_text": user_text, **(context or {})},
+            )
+        )
+        llm_source = "fallback"
+
+    ai_response = ai_text
 
     audio_url: str | None = None
     tts_error: str | None = None
     try:
-        tts = await eleven_service.text_to_speech(ai_response)
+        tts = await coqui_tts_service.text_to_speech(ai_response)
         audio_url = tts["audio_url"]
     except Exception as exc:
         tts_error = str(exc)
-        log.warning("ElevenLabs TTS failed, returning text-only response: %s", exc)
+        log.warning("Offline Coqui TTS failed, returning text-only response: %s", exc)
 
     payload: dict[str, Any] = {
         "user_text": user_text,
@@ -104,7 +133,7 @@ async def run_voice_pipeline(
         "module": module,
         "language": language,
         "stt_source": transcription.get("source"),
-        "llm_source": ai.get("model"),
+        "llm_source": llm_source,
         "intent": transcription.get("intent"),
         "confidence": transcription.get("confidence"),
         "route": transcription.get("route"),

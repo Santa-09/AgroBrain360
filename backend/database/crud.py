@@ -144,7 +144,10 @@ def create_health_index(
     livestock_score: float,
     machinery_score: float,
     fhi_score: float,
+    label: str | None = None,
+    **_: object,
 ) -> HealthIndex:
+    del label
     record = HealthIndex(
         user_id=user_id,
         crop_score=crop_score,

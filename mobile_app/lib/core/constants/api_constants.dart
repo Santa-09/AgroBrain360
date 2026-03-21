@@ -1,17 +1,33 @@
 class ApiK {
   static const String base = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://agrobrain360.onrender.com',
+    defaultValue: 'http://10.0.2.2:8000',
   );
   static const String local = String.fromEnvironment(
     'API_LOCAL_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: emulatorLocal,
+  );
+  static const String emulatorLocal = 'http://10.0.2.2:8000';
+  static const String lanLocal = String.fromEnvironment(
+    'API_LAN_URL',
+    defaultValue: '',
   );
   static bool useLocal = const bool.fromEnvironment(
     'USE_LOCAL_API',
-    defaultValue: false,
+    defaultValue: true,
   );
   static String get root => useLocal ? local : base;
+  static List<String> get localCandidates {
+    final values = <String>[local, lanLocal, emulatorLocal];
+    final seen = <String>{};
+    final cleaned = <String>[];
+    for (final value in values) {
+      final normalized = value.trim();
+      if (normalized.isEmpty || !seen.add(normalized)) continue;
+      cleaned.add(normalized);
+    }
+    return cleaned;
+  }
   static String resolveUrl(String value) {
     if (value.startsWith('http://') || value.startsWith('https://')) {
       return value;
@@ -66,4 +82,5 @@ class ApiK {
       };
 
   static const int timeoutMs = 20000;
+  static const int voiceTimeoutMs = 120000;
 }

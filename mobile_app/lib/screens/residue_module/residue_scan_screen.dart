@@ -126,7 +126,8 @@ class _ResidueScanScreenState extends State<ResidueScanScreen> {
         DateTime.now().millisecondsSinceEpoch.toString(),
         {
           'type': 'residue',
-          'title': '$_type - ${result['best_option'] ?? 'Analyzed'}',
+          'title':
+              '${_typeLabel(_type)} - ${H.displayText(result['best_option']?.toString() ?? t('analyzedLabel'))}',
           'result':
               H.compact((result['projected_earnings'] as num? ?? 0).toDouble()),
           'ts': DateTime.now().toIso8601String(),
@@ -168,8 +169,30 @@ class _ResidueScanScreenState extends State<ResidueScanScreen> {
 
   Future<void> _toggleVoice() async {
     if (_backendRecording) {
-      await VoiceSvc().cancelBackendRecording();
-      if (mounted) setState(() => _backendRecording = false);
+      setState(() => _busy = true);
+      final response = await VoiceSvc().stopBackendRecordingAndTranscribe(
+        lang: LangSvc().lang,
+        detectIntent: false,
+        prompt: 'Transcribe residue crop type and moisture condition clearly for income analysis.',
+      );
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _backendRecording = false;
+      });
+      if (response.ok && response.data != null) {
+        final payload = response.data!;
+        final data = payload['data'] as Map<String, dynamic>? ?? payload;
+        final text = (data['text'] ?? '').toString().trim();
+        if (text.isNotEmpty) {
+          _applyResidueTranscript(text);
+        } else {
+          H.snack(context, t('noSpeechDetected'), error: true);
+        }
+      } else {
+        H.snack(context, response.error ?? t('voiceFailed'), error: true);
+      }
+      return;
     }
     if (_listening) {
       await VoiceSvc().stop();
@@ -185,7 +208,14 @@ class _ResidueScanScreenState extends State<ResidueScanScreen> {
       );
       if (!started && mounted) {
         setState(() => _listening = false);
-        H.snack(context, 'Voice input is unavailable right now', error: true);
+        final backendStarted = await VoiceSvc().startBackendRecording();
+        if (!mounted) return;
+        if (backendStarted) {
+          setState(() => _backendRecording = true);
+          H.snack(context, t('recordingAiVoice'));
+        } else {
+          H.snack(context, t('voiceUnavailable'), error: true);
+        }
       }
     }
   }
@@ -602,7 +632,7 @@ class _ResidueScanScreenState extends State<ResidueScanScreen> {
               ],
             ),
           ),
-          if (_busy) const LoadingOverlay(msg: 'Calculating income options...'),
+          if (_busy) LoadingOverlay(msg: t('calculatingIncomeOptions')),
         ],
       ),
     );

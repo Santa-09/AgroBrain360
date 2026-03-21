@@ -1,9 +1,11 @@
 import json
 from typing import Any
 
+from httpx import RequestError
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from services import response_service, voice_service
+from services.groq_service import GroqServiceError
 
 router = APIRouter(tags=["Voice"])
 
@@ -67,16 +69,25 @@ async def voice_pipeline(
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded audio file is empty")
 
-    result = await voice_service.run_voice_pipeline(
-        filename=file.filename or "audio.webm",
-        content=content,
-        content_type=file.content_type or "application/octet-stream",
-        module=module,
-        language=language,
-        prompt=prompt,
-        context=_parse_context(context),
-        detect_intent=detect_intent,
-    )
+    try:
+        result = await voice_service.run_voice_pipeline(
+            filename=file.filename or "audio.webm",
+            content=content,
+            content_type=file.content_type or "application/octet-stream",
+            module=module,
+            language=language,
+            prompt=prompt,
+            context=_parse_context(context),
+            detect_intent=detect_intent,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except GroqServiceError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except RequestError as exc:
+        raise HTTPException(status_code=503, detail=f"Voice provider connection failed: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Voice pipeline failed: {exc}") from exc
     return response_service.build(result, lang=language)
 
 
@@ -94,12 +105,21 @@ async def transcribe_voice(
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded audio file is empty")
 
-    result = await voice_service.transcribe_audio(
-        filename=file.filename or "audio.webm",
-        content=content,
-        content_type=file.content_type or "application/octet-stream",
-        language=language,
-        prompt=prompt,
-        detect_intent=detect_intent,
-    )
+    try:
+        result = await voice_service.transcribe_audio(
+            filename=file.filename or "audio.webm",
+            content=content,
+            content_type=file.content_type or "application/octet-stream",
+            language=language,
+            prompt=prompt,
+            detect_intent=detect_intent,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except GroqServiceError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except RequestError as exc:
+        raise HTTPException(status_code=503, detail=f"Voice provider connection failed: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Voice transcription failed: {exc}") from exc
     return response_service.build(result, lang=language or "en")

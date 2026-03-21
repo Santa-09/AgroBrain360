@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import crud
 from database.connection import get_db
 from services import response_service
-from utils.auth import get_current_user_id
+from utils.auth import get_optional_user_id
 
 router = APIRouter(prefix="/sync", tags=["Offline Sync"])
 
@@ -89,13 +89,28 @@ def _serialize_history_item(item) -> dict:
     return payload
 
 
+def _empty_sync_response(total: int = 0) -> dict:
+    return response_service.build({"synced": 0, "total": total})
+
+
+def _empty_history_response() -> dict:
+    return response_service.build({"items": [], "total": 0})
+
+
 @router.post("")
 @router.post("/")
 def sync_offline_records(
     body: dict | None = Body(default=None),
     db: Session = Depends(get_db),
-    user_id=Depends(get_current_user_id),
+    user_id=Depends(get_optional_user_id),
 ):
+    if user_id is None:
+        total = 0
+        if isinstance(body, dict):
+            records = body.get("records")
+            total = len(records) if isinstance(records, list) else 1
+        return _empty_sync_response(total=total)
+
     if body:
         records = body.get("records")
         if isinstance(records, list):
@@ -136,10 +151,15 @@ def sync_offline_records(
 def sync_history_records(
     body: dict | None = Body(default=None),
     db: Session = Depends(get_db),
-    user_id=Depends(get_current_user_id),
+    user_id=Depends(get_optional_user_id),
 ):
     if not body:
         return response_service.build({"synced": 0, "total": 0})
+
+    if user_id is None:
+        records = body.get("records") if isinstance(body, dict) else None
+        total = len(records) if isinstance(records, list) else 1
+        return _empty_sync_response(total=total)
 
     records = body.get("records")
     if isinstance(records, list):
@@ -171,8 +191,11 @@ def sync_history_records(
 def get_history_records(
     limit: int = Query(default=200, ge=1, le=500),
     db: Session = Depends(get_db),
-    user_id=Depends(get_current_user_id),
+    user_id=Depends(get_optional_user_id),
 ):
+    if user_id is None:
+        return _empty_history_response()
+
     items = crud.get_user_scan_history(db, user_id, limit=limit)
     return response_service.build(
         {

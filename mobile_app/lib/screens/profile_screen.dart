@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants/app_colors.dart';
@@ -68,18 +68,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String get _name => _user?['name'] as String? ?? 'Farmer';
-  String get _phone => _user?['phone'] as String? ?? '—';
+  String get _phone => _user?['phone'] as String? ?? 'â€”';
   String t(String key) => LangSvc().t(key);
   String tr(String key, String fallback) {
     final value = t(key);
     return value == key ? fallback : value;
   }
+  String _languageName(String code) => LangSvc().languageName(code);
+  String _nativeLanguageName(String code) => LangSvc().nativeLanguageName(code);
+  String _languageFlag(String code) => LangSvc().languageFlag(code);
 
   String _themeLabel() => switch (_themeMode) {
         ThemeMode.light => tr('lightMode', 'Light'),
         ThemeMode.dark => tr('darkMode', 'Dark'),
         ThemeMode.system => tr('systemTheme', 'System'),
       };
+
+  String _profileNotificationsLabel() => tr('notifications', 'Notifications');
 
   String _fhiLabel(int score) {
     if (score >= 80) return tr('excellent', 'Excellent');
@@ -127,8 +132,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _statsRow(),
                 const SizedBox(height: 24),
 
-              // ── Notifications card ──────────────────────
-              _sectionTitle(tr('notifications', 'Notifications')),
+              // â”€â”€ Notifications card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              _sectionTitle(_profileNotificationsLabel()),
               const SizedBox(height: 10),
               _card([
                 GestureDetector(
@@ -186,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(tr('notifications', 'Notifications'),
+                            Text(_profileNotificationsLabel(),
                                 style: GoogleFonts.dmSans(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -230,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
 
               const SizedBox(height: 20),
-              // ── Account ────────────────────────────────
+              // â”€â”€ Account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _sectionTitle(tr('account', 'Account')),
               const SizedBox(height: 10),
               _card([
@@ -246,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
 
               const SizedBox(height: 20),
-              // ── Preferences ────────────────────────────
+              // â”€â”€ Preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _sectionTitle(tr('preferences', 'Preferences')),
               const SizedBox(height: 10),
               _card([
@@ -292,7 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         decoration: BoxDecoration(
                             color: AppColors.primaryFaint,
                             borderRadius: BorderRadius.circular(8)),
-                        child: Text(LangSvc.supported[_lang] ?? 'English',
+                        child: Text(_languageName(_lang),
                             style: GoogleFonts.dmSans(
                                 color: AppColors.primary,
                                 fontSize: 12,
@@ -374,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
 
               const SizedBox(height: 20),
-              // ── App links ──────────────────────────────
+              // â”€â”€ App links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _sectionTitle(tr('app', 'App')),
               const SizedBox(height: 10),
               _card([
@@ -398,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
 
               const SizedBox(height: 20),
-              // ── Support ────────────────────────────────
+              // â”€â”€ Support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _sectionTitle(tr('support', 'Support')),
               const SizedBox(height: 10),
               _card([
@@ -406,9 +411,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () => Navigator.pushNamed(
                           context,
                           Routes.aiCaseChat,
-                          arguments: const AiCaseChatArgs(
+                          arguments: AiCaseChatArgs(
                             module: 'assistant',
-                            title: 'AI Help Center',
+                            title: tr('aiHelpCenter', 'AI Help Center'),
                             context: {'entry': 'profile_support'},
                           ),
                         )),
@@ -428,7 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
 
               const SizedBox(height: 24),
-              // ── Sign out ───────────────────────────────
+              // â”€â”€ Sign out â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               GestureDetector(
                 onTap: _confirmLogout,
                 child: Container(
@@ -463,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────
+  // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildHeader() => SliverToBoxAdapter(
         child: Container(
           decoration: const BoxDecoration(gradient: AppColors.brandGradient),
@@ -580,7 +585,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  // ── Stats ─────────────────────────────────────────────────
+  // â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _statsRow() {
     final fhiRaw = DB.getFHI();
     final fhiScore =
@@ -620,7 +625,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _vDivider() =>
       Container(width: 1, height: 32, color: AppColors.border);
 
-  // ── Reusable widgets ──────────────────────────────────────
+  // â”€â”€ Reusable widgets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _sectionTitle(String t) => Text(t,
       style: GoogleFonts.dmSans(
           fontSize: 12,
@@ -734,31 +739,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   TextStyle _trailStyle() =>
       GoogleFonts.dmSans(fontSize: 13, color: AppColors.textTertiary);
 
-  Widget _langPicker() {
-    final langs = {
-      'en': 'English',
-      'hi': 'हिंदी',
-      'od': 'ଓଡ଼ିଆ',
-      'ta': 'தமிழ்',
-      'te': 'తెలుగు',
-    };
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: _lang,
-        isDense: true,
-        style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textTertiary),
-        items: langs.entries
-            .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-            .toList(),
-        onChanged: (v) async {
-          if (v == null) return;
-          setState(() => _lang = v);
-          await LangSvc().set(v); // notifyListeners() rebuilds whole app
-        },
-      ),
-    );
-  }
-
   Future<String?> _pickLanguage() async {
     return showModalBottomSheet<String>(
       context: context,
@@ -826,7 +806,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Text(
-                            LangSvc.flags[entry.key] ?? '🌐',
+                            _languageFlag(entry.key),
                             style: const TextStyle(fontSize: 20),
                           ),
                           const SizedBox(width: 12),
@@ -835,7 +815,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  LangSvc.nativeNames[entry.key] ?? entry.value,
+                                  _nativeLanguageName(entry.key),
                                   style: GoogleFonts.dmSans(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -843,7 +823,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 Text(
-                                  entry.value,
+                                  _languageName(entry.key),
                                   style: GoogleFonts.dmSans(
                                     fontSize: 11,
                                     color: AppColors.textTertiary,
@@ -871,7 +851,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Edit profile bottom sheet ─────────────────────────────
+  // â”€â”€ Edit profile bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _pickThemeMode() async {
     final selected = await showModalBottomSheet<ThemeMode>(
       context: context,
@@ -1111,7 +1091,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Sign out ──────────────────────────────────────────────
+  // â”€â”€ Sign out â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _confirmLogout() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -1300,3 +1280,6 @@ class _RateUsSheetState extends State<_RateUsSheet> {
     }
   }
 }
+
+
+

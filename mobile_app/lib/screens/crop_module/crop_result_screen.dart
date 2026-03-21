@@ -6,6 +6,7 @@ import '../../core/utils/helpers.dart';
 import '../../models/ai_case_chat_args.dart';
 import '../../routes/app_routes.dart';
 import '../../services/language_service.dart';
+import '../../services/voice_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_card.dart';
 
@@ -23,6 +24,7 @@ class CropResultScreen extends StatelessWidget {
     final value = LangSvc().t(key);
     return value == key ? fallback : value;
   }
+  String _display(String value) => H.displayText(value);
   Color get _color => _isCropDetection
       ? AppColors.cropGreen
       : (_healthy ? AppColors.success : H.riskColor(_severity));
@@ -33,12 +35,23 @@ class CropResultScreen extends StatelessWidget {
       Routes.aiCaseChat,
       arguments: AiCaseChatArgs(
         module: _isCropDetection ? 'crop_detection' : 'crop',
-        title: data['disease_name'] as String? ??
-            tr('unknownLabel', 'Unknown'),
+        title: _display(
+          data['disease_name'] as String? ?? tr('unknownLabel', 'Unknown'),
+        ),
         imagePath: data['image_url'] as String?,
         context: data,
       ),
     );
+  }
+
+  Future<void> _speakAdvice(BuildContext context, String text) async {
+    final clean = text.replaceAll('**', '').trim();
+    if (clean.isEmpty) return;
+    await VoiceSvc().setLang(LangSvc().lang);
+    await VoiceSvc().speak(clean);
+    if (context.mounted) {
+      H.snack(context, tr('voiceProcessed', 'AI voice response ready'));
+    }
   }
 
   @override
@@ -112,7 +125,10 @@ class CropResultScreen extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
-                          data['disease_name'] as String? ?? tr('unknownLabel', 'Unknown'),
+                          _display(
+                            data['disease_name'] as String? ??
+                                tr('unknownLabel', 'Unknown'),
+                          ),
                           style: GoogleFonts.dmSans(
                             color: Colors.white,
                             fontSize: 20,
@@ -148,7 +164,11 @@ class CropResultScreen extends StatelessWidget {
                       Expanded(
                         child: _metric(
                           _isCropDetection ? tr('resultLabel', 'Result') : tr('severityLabel', 'Severity'),
-                          _isCropDetection ? tr('detectedLabel', 'Detected') : H.cap(_severity),
+                          _display(
+                            _isCropDetection
+                                ? tr('detectedLabel', 'Detected')
+                                : H.cap(_severity),
+                          ),
                           _isCropDetection
                               ? Icons.spa_rounded
                               : Icons.warning_amber_rounded,
@@ -187,7 +207,7 @@ class CropResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          data['description'] as String? ?? '',
+                          _display(data['description'] as String? ?? ''),
                           style: GoogleFonts.dmSans(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -208,7 +228,9 @@ class CropResultScreen extends StatelessWidget {
                               tr('recommendedFertilizer', 'Recommended Fertilizer'), Icons.science_rounded),
                           const SizedBox(height: 10),
                           Text(
-                            data['recommended_fertilizer'] as String? ?? '',
+                            _display(
+                              data['recommended_fertilizer'] as String? ?? '',
+                            ),
                             style: GoogleFonts.dmSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -230,7 +252,7 @@ class CropResultScreen extends StatelessWidget {
                               true) ...[
                             const SizedBox(height: 8),
                             Text(
-                              data['fertilizer_tip'] as String,
+                              _display(data['fertilizer_tip'] as String),
                               style: GoogleFonts.dmSans(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
@@ -259,11 +281,23 @@ class CropResultScreen extends StatelessWidget {
                               tr('aiFieldAdvisory', 'AI Field Advisory'), Icons.auto_awesome_rounded),
                           const SizedBox(height: 10),
                           Text(
-                            data['advisory'] as String,
+                            _display(
+                              (data['advisory'] as String).replaceAll('**', ''),
+                            ),
                             style: GoogleFonts.dmSans(
                               fontSize: 13,
                               color: AppColors.textSecondary,
                               height: 1.6,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Btn.outline(
+                            label: tr('speakAdvice', 'Speak Advice'),
+                            icon: Icons.volume_up_rounded,
+                            fg: AppColors.amber,
+                            onTap: () => _speakAdvice(
+                              context,
+                              data['advisory'] as String,
                             ),
                           ),
                         ],
@@ -295,7 +329,7 @@ class CropResultScreen extends StatelessWidget {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        s.toString(),
+                                        _display(s.toString()),
                                         style: GoogleFonts.dmSans(
                                           fontSize: 13,
                                           color: AppColors.textSecondary,
@@ -325,7 +359,7 @@ class CropResultScreen extends StatelessWidget {
                               tr('treatmentPlan', 'Treatment Plan'), Icons.medical_services_rounded),
                           const SizedBox(height: 10),
                           Text(
-                            data['treatment_plan'] as String? ?? '',
+                            _display(data['treatment_plan'] as String? ?? ''),
                             style: GoogleFonts.dmSans(
                               fontSize: 13,
                               color: AppColors.textSecondary,

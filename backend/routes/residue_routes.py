@@ -8,6 +8,27 @@ from services import response_service
 
 router = APIRouter(prefix="/residue", tags=["Crop Residue"])
 
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "image/webp",
+}
+ALLOWED_IMAGE_EXTENSIONS = {
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".webp",
+}
+
+
+def _is_allowed_image_upload(file: UploadFile) -> bool:
+    if file.content_type in ALLOWED_IMAGE_TYPES:
+        return True
+
+    filename = (file.filename or "").lower()
+    return any(filename.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS)
+
 
 @router.post("/analyze")
 async def analyze_residue(
@@ -16,8 +37,11 @@ async def analyze_residue(
     moisture: str = Form("Medium"),
     lang: str = Form("en"),
 ):
-    if file.content_type not in ("image/jpeg", "image/png", "image/jpg"):
-        raise HTTPException(status_code=400, detail="Only JPEG/PNG images accepted")
+    if not _is_allowed_image_upload(file):
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG, PNG, or WEBP images are accepted",
+        )
 
     crop_key = residue_type.lower().strip()
     recommendation = get_recommendations(crop_key)

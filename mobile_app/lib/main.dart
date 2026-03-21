@@ -71,7 +71,7 @@ class AgroBrain360App extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([LangSvc(), ThemeSvc()]),
       builder: (_, __) => MaterialApp(
-        title: 'AgroBrain 360',
+        title: LangSvc().t('appName'),
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,

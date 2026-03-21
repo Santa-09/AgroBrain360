@@ -593,7 +593,7 @@ class _ServiceSearchScreenState extends State<ServiceSearchScreen> {
                         ),
                       ),
                       Text(
-                        svc['specialty'] as String? ?? '',
+                        H.displayText(svc['specialty'] as String? ?? ''),
                         style: GoogleFonts.dmSans(
                             fontSize: 12, color: AppColors.textTertiary),
                       ),

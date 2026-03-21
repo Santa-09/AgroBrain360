@@ -29,6 +29,7 @@ import '../screens/health_index/health_score_screen.dart';
 import '../screens/services_module/service_search_screen.dart';
 import '../screens/services_module/service_contact_screen.dart';
 import '../screens/history/scan_history_screen.dart';
+import '../services/language_service.dart';
 
 class Routes {
   static const langPicker = '/lang';
@@ -59,41 +60,47 @@ class Routes {
   static const history = '/history';
 
   static Map<String, WidgetBuilder> get table => {
-        langPicker: (_) => const LanguagePickerScreen(),
-        splash: (_) => const SplashScreen(),
-        login: (_) => const LoginScreen(),
-        forgotPassword: (_) => const ForgotPasswordEmailScreen(),
-        dashboard: (_) => const MainShell(),
-        notifications: (_) => const NotificationsScreen(),
-        cropScan: (_) => const CropOptionsScreen(),
-        cropRecommendation: (_) => const CropRecommendationScreen(),
-        cropDiseaseScan: (_) =>
-            const CropScanScreen(mode: CropScanMode.diseaseDetection),
-        cropDetectScan: (_) =>
-            const CropScanScreen(mode: CropScanMode.cropDetection),
-        fertilizerInput: (_) => const FertilizerInputScreen(),
-        livestockIn: (_) => const LivestockInputScreen(),
-        machScan: (_) => const MachineryScanScreen(),
-        residueScan: (_) => const ResidueScanScreen(),
-        farmInput: (_) => const FarmInputScreen(),
-        svcSearch: (_) => const ServiceSearchScreen(),
-        history: (_) => const ScanHistoryScreen(),
+        langPicker: (_) => _withLanguage(const LanguagePickerScreen()),
+        splash: (_) => _withLanguage(const SplashScreen()),
+        login: (_) => _withLanguage(const LoginScreen()),
+        forgotPassword: (_) => _withLanguage(const ForgotPasswordEmailScreen()),
+        dashboard: (_) => _withLanguage(const MainShell()),
+        notifications: (_) => _withLanguage(const NotificationsScreen()),
+        cropScan: (_) => _withLanguage(const CropOptionsScreen()),
+        cropRecommendation: (_) => _withLanguage(const CropRecommendationScreen()),
+        cropDiseaseScan: (_) => _withLanguage(
+              const CropScanScreen(mode: CropScanMode.diseaseDetection),
+            ),
+        cropDetectScan: (_) => _withLanguage(
+              const CropScanScreen(mode: CropScanMode.cropDetection),
+            ),
+        fertilizerInput: (_) => _withLanguage(const FertilizerInputScreen()),
+        livestockIn: (_) => _withLanguage(const LivestockInputScreen()),
+        machScan: (_) => _withLanguage(const MachineryScanScreen()),
+        residueScan: (_) => _withLanguage(const ResidueScanScreen()),
+        farmInput: (_) => _withLanguage(const FarmInputScreen()),
+        svcSearch: (_) => _withLanguage(const ServiceSearchScreen()),
+        history: (_) => _withLanguage(const ScanHistoryScreen()),
       };
 
   static Route<dynamic> generate(RouteSettings s) {
     switch (s.name) {
       case cropResult:
         return _slide(
-            CropResultScreen(data: s.arguments as Map<String, dynamic>));
+          CropResultScreen(data: s.arguments as Map<String, dynamic>),
+        );
       case cropRecommendationResult:
-        return _slide(CropRecommendationResultScreen(
-            data: s.arguments as Map<String, dynamic>));
+        return _slide(
+          CropRecommendationResultScreen(data: s.arguments as Map<String, dynamic>),
+        );
       case livestockRes:
         return _slide(
-            LivestockResultScreen(data: s.arguments as Map<String, dynamic>));
+          LivestockResultScreen(data: s.arguments as Map<String, dynamic>),
+        );
       case aiCaseChat:
         return _slide(
-            AiCaseChatScreen(args: s.arguments as AiCaseChatArgs));
+          AiCaseChatScreen(args: s.arguments as AiCaseChatArgs),
+        );
       case machArGuide:
         final args = s.arguments as Map<String, dynamic>;
         return _slide(
@@ -104,24 +111,28 @@ class Routes {
           ),
         );
       case fertilizerResult:
-        return _slide(FertilizerResultScreen(
-            data: s.arguments as FertilizerRecommendation));
+        return _slide(
+          FertilizerResultScreen(data: s.arguments as FertilizerRecommendation),
+        );
       case residueIncome:
         return _slide(
-            ResidueIncomeScreen(data: s.arguments as Map<String, dynamic>));
+          ResidueIncomeScreen(data: s.arguments as Map<String, dynamic>),
+        );
       case healthScore:
         return _slide(
-            HealthScoreScreen(data: s.arguments as Map<String, dynamic>));
+          HealthScoreScreen(data: s.arguments as Map<String, dynamic>),
+        );
       case svcContact:
         return _slide(
-            ServiceContactScreen(svc: s.arguments as Map<String, dynamic>));
+          ServiceContactScreen(svc: s.arguments as Map<String, dynamic>),
+        );
       default:
         return _slide(const SplashScreen());
     }
   }
 
   static PageRouteBuilder _slide(Widget page) => PageRouteBuilder(
-        pageBuilder: (_, a, __) => page,
+        pageBuilder: (_, a, __) => _withLanguage(page),
         transitionsBuilder: (_, a, __, child) => SlideTransition(
           position: Tween(begin: const Offset(1, 0), end: Offset.zero)
               .chain(CurveTween(curve: Curves.easeOutCubic))
@@ -129,5 +140,13 @@ class Routes {
           child: child,
         ),
         transitionDuration: const Duration(milliseconds: 280),
+      );
+
+  static Widget _withLanguage(Widget child) => ListenableBuilder(
+        listenable: LangSvc(),
+        builder: (_, __) => KeyedSubtree(
+          key: ValueKey('lang-${LangSvc().lang}-${child.runtimeType}'),
+          child: child,
+        ),
       );
 }

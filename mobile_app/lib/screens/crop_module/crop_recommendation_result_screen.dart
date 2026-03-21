@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/helpers.dart';
 import '../../routes/app_routes.dart';
 import '../../services/language_service.dart';
 import '../../widgets/custom_button.dart';
@@ -22,7 +23,9 @@ class CropRecommendationResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cropName = data['crop']?.toString() ?? t('unknownLabel', 'Unknown');
+    final cropName = H.displayText(
+      data['crop']?.toString() ?? t('unknownLabel', 'Unknown'),
+    );
     final source = data['source']?.toString() ?? 'offline';
     final summary = data['summary']?.toString();
     final description = data['description']?.toString();
@@ -202,9 +205,11 @@ class CropRecommendationResultScreen extends StatelessWidget {
                                   ? item
                                   : Map<String, dynamic>.from(
                                       item as Map<dynamic, dynamic>);
-                              final name = map['crop']?.toString() ??
-                                  map['label']?.toString() ??
-                                  t('unknownLabel', 'Unknown');
+                              final name = H.displayText(
+                                map['crop']?.toString() ??
+                                    map['label']?.toString() ??
+                                    t('unknownLabel', 'Unknown'),
+                              );
                               final confidence =
                                   (map['confidence'] as num? ?? 0).toDouble();
                               return Padding(

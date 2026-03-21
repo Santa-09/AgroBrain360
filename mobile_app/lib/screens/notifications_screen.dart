@@ -34,6 +34,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return value == key ? fallback : value;
   }
 
+  String _display(String value) => LangSvc().displayText(value);
+
   Future<void> _markAllRead() async {
     await NotificationSvc().markAllRead();
     _load();
@@ -174,7 +176,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Row(children: [
                       Expanded(
                         child: Text(
-                          n.title,
+                          _display(n.title),
                           style: GoogleFonts.dmSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -194,7 +196,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ]),
                     const SizedBox(height: 3),
                     Text(
-                      n.body,
+                      _display(n.body),
                       style: GoogleFonts.dmSans(
                         fontSize: 12,
                         color: AppColors.textSecondary,

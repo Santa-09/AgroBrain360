@@ -12,6 +12,16 @@ from utils.auth import get_current_user_id, get_optional_user_id
 router = APIRouter(prefix="/health", tags=["Farm Health Index"])
 
 
+def _label_from_score(score: float) -> str:
+    if score >= 80:
+        return "Excellent"
+    if score >= 60:
+        return "Good"
+    if score >= 40:
+        return "Fair"
+    return "Poor"
+
+
 @router.post("/score")
 def compute_health_score(
     body: HealthScoreRequest,
@@ -44,5 +54,6 @@ def get_latest_score(
         "water_score":     record.water_score,
         "livestock_score": record.livestock_score,
         "machinery_score": record.machinery_score,
+        "label":           _label_from_score(record.fhi_score),
         "created_at":      str(record.created_at),
     })

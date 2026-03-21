@@ -1,5 +1,5 @@
 // PATH: lib/services/language_service.dart
-import 'dart:convert';
+import 'dart:convert' show jsonDecode, latin1, utf8;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +12,8 @@ class LangSvc extends ChangeNotifier {
   LangSvc._();
 
   Map<String, String> _map = {};
+  Map<String, String> _englishMap = {};
+  Map<String, String> _selectedMap = {};
   String _lang = '';
 
   static const Map<String, String> _fallback = {
@@ -40,6 +42,12 @@ class LangSvc extends ChangeNotifier {
         'Language changes update the full app and all modules.',
     'languageSavedAfterSignOut':
         'Applied across all modules and kept after sign out.',
+    'dashboardMorningLine':
+        'A fresh start for field checks, watering plans, and early decisions.',
+    'dashboardAfternoonLine':
+        'Keep an eye on heat, crop stress, and pending farm tasks this afternoon.',
+    'dashboardEveningLine':
+        'Wrap up today with quick checks on crops, livestock, and tomorrow\'s plan.',
     'offlineSessionStarted':
         'Offline session started. Cloud sync will resume when internet is back.',
     'goodMorning': S.goodMorning,
@@ -189,9 +197,11 @@ class LangSvc extends ChangeNotifier {
     'diagnoseNow': 'Diagnose Now',
     'diagnosingWithAI': 'Diagnosing with AI...',
     'voice': 'Voice',
+    'voiceUnavailable': 'Voice input is unavailable right now',
     'aiVoice': 'AI Voice',
     'voiceProcessed': 'AI voice response ready',
     'voiceFailed': 'AI voice request failed',
+    'speakAdvice': 'Speak Advice',
     'recordingAiVoice': 'Recording for AI voice... tap Stop when finished.',
     'stop': 'Stop',
     'listeningSpeakClearly': 'Listening... speak clearly',
@@ -209,6 +219,7 @@ class LangSvc extends ChangeNotifier {
     'aiHelpHint': 'Ask about problem, treatment, prevention, or next step',
     'residueListening': 'Listening... mention residue type and moisture clearly',
     'calculateIncome': 'Calculate Income Options',
+    'projectedEarnings': 'Projected earnings',
     'residuePhotoTitle': 'Tap to photograph the crop residue',
     'residuePhotoSub': 'Capture a clear photo for income and reuse guidance',
     'residueTip': 'Stop burning stubble. Convert residue into compost, fodder, or briquettes for extra income.',
@@ -312,6 +323,288 @@ class LangSvc extends ChangeNotifier {
         'Adjust pulley tension gradually until the belt deflects only slightly by hand.',
     'repairBeltStep3':
         'Replace the belt if edges are frayed or if slippage continues after adjustment.',
+    'animalCow': 'Cow',
+    'animalBuffalo': 'Buffalo',
+    'animalGoat': 'Goat',
+    'animalSheep': 'Sheep',
+    'animalPig': 'Pig',
+    'animalChicken': 'Chicken',
+    'animalHorse': 'Horse',
+    'animalFish': 'Fish',
+    'recommendedLabel': 'Recommended',
+    'analyzedLabel': 'Analyzed',
+    'sourceLabel': 'Source',
+    'offlineLabel': 'Offline',
+    'cloudLabel': 'Cloud',
+    'topRecommendations': 'Top Recommendations',
+    'recommendAgain': 'Recommend Again',
+    'specialty': 'Specialty',
+    'address': 'Address',
+    'phone': 'Phone',
+    'openNow': 'Open Now',
+    'callNow': 'Call Now',
+    'chatOnWhatsApp': 'Chat on WhatsApp',
+    'getDirections': 'Get Directions',
+    'requestTimedOut': 'Request timed out. Please try again.',
+    'somethingWentWrong': 'Something went wrong. Please try again.',
+    'justNow': 'Just now',
+    'minutesAgo': '{value}m ago',
+    'hoursAgo': '{value}h ago',
+    'daysAgo': '{value}d ago',
+  };
+
+  static const Map<String, Map<String, String>> _extraLocalizedFallback = {
+    'hi': {
+      'dashboardMorningLine':
+          'खेत की जांच, सिंचाई योजना और सुबह के फैसलों के लिए यह एक ताज़ा शुरुआत है।',
+      'dashboardAfternoonLine':
+          'इस दोपहर गर्मी, फसल तनाव और बाकी खेत के कामों पर नज़र रखें।',
+      'dashboardEveningLine':
+          'आज की फसल, पशुधन और कल की योजना की शाम को जल्दी समीक्षा करें।',
+      'animalCow': 'गाय',
+      'animalBuffalo': 'भैंस',
+      'animalGoat': 'बकरी',
+      'animalSheep': 'भेड़',
+      'animalPig': 'सुअर',
+      'animalChicken': 'मुर्गी',
+      'animalHorse': 'घोड़ा',
+      'animalFish': 'मछली',
+      'recommendedLabel': 'सिफारिश',
+      'analyzedLabel': 'विश्लेषित',
+      'sourceLabel': 'स्रोत',
+      'offlineLabel': 'ऑफलाइन',
+      'cloudLabel': 'क्लाउड',
+      'topRecommendations': 'शीर्ष सिफारिशें',
+      'recommendAgain': 'फिर सिफारिश करें',
+      'specialty': 'विशेषता',
+      'address': 'पता',
+      'phone': 'फोन',
+      'openNow': 'अभी खुला',
+      'callNow': 'अभी कॉल करें',
+      'chatOnWhatsApp': 'व्हाट्सऐप पर चैट',
+      'getDirections': 'दिशा देखें',
+      'requestTimedOut': 'अनुरोध का समय समाप्त हो गया। फिर प्रयास करें।',
+      'somethingWentWrong': 'कुछ गलत हुआ। फिर प्रयास करें।',
+      'justNow': 'अभी',
+      'minutesAgo': '{value} मिनट पहले',
+      'hoursAgo': '{value} घंटे पहले',
+      'daysAgo': '{value} दिन पहले',
+    },
+    'od': {
+      'dashboardMorningLine':
+          'କ୍ଷେତ ଯାଞ୍ଚ, ପାଣି ଯୋଜନା ଏବଂ ସକାଳର ନିଷ୍ପତ୍ତି ପାଇଁ ଏହା ଭଲ ଆରମ୍ଭ।',
+      'dashboardAfternoonLine':
+          'ଏହି ଦୁପରେ ଗରମ, ଫସଲ ଚାପ ଏବଂ ବାକି କାମ ଉପରେ ନଜର ରଖନ୍ତୁ।',
+      'dashboardEveningLine':
+          'ଆଜିର ଫସଲ, ପଶୁପାଳନ ଏବଂ କାଲିର ଯୋଜନାକୁ ସନ୍ଧ୍ୟାରେ ଥରେ ଯାଞ୍ଚ କରନ୍ତୁ।',
+      'animalCow': 'ଗାଈ',
+      'animalBuffalo': 'ମହିଷ',
+      'animalGoat': 'ଛେଳି',
+      'animalSheep': 'ଭେଡ଼ା',
+      'animalPig': 'ସୁଆର',
+      'animalChicken': 'କୁକୁଡ଼ି',
+      'animalHorse': 'ଘୋଡ଼ା',
+      'animalFish': 'ମାଛ',
+      'recommendedLabel': 'ସୁପାରିଶ',
+      'analyzedLabel': 'ବିଶ୍ଳେଷିତ',
+      'sourceLabel': 'ଉତ୍ସ',
+      'offlineLabel': 'ଅଫଲାଇନ',
+      'cloudLabel': 'କ୍ଲାଉଡ୍',
+      'topRecommendations': 'ଶୀର୍ଷ ସୁପାରିଶ',
+      'recommendAgain': 'ପୁନି ସୁପାରିଶ କରନ୍ତୁ',
+      'specialty': 'ବିଶେଷତା',
+      'address': 'ଠିକଣା',
+      'phone': 'ଫୋନ',
+      'openNow': 'ଏବେ ଖୋଲା',
+      'callNow': 'ଏବେ କଲ୍ କରନ୍ତୁ',
+      'chatOnWhatsApp': 'WhatsApp ରେ ଚ୍ୟାଟ',
+      'getDirections': 'ପଥ ଦେଖନ୍ତୁ',
+      'requestTimedOut': 'ଅନୁରୋଧର ସମୟ ସମାପ୍ତ ହୋଇଗଲା। ପୁନି ଚେଷ୍ଟା କରନ୍ତୁ।',
+      'somethingWentWrong': 'କିଛି ଭୁଲ୍ ହୋଇଛି। ପୁନି ଚେଷ୍ଟା କରନ୍ତୁ।',
+      'justNow': 'ଏମିତିକି',
+      'minutesAgo': '{value}ମି ପୂର୍ବରୁ',
+      'hoursAgo': '{value}ଘ ପୂର୍ବରୁ',
+      'daysAgo': '{value}ଦିନ ପୂର୍ବରୁ',
+    },
+    'ta': {
+      'dashboardMorningLine':
+          'வயல் பரிசோதனை, நீர்ப்பாசன திட்டம் மற்றும் காலையிலான முடிவுகளுக்கான புதிய தொடக்கம் இது.',
+      'dashboardAfternoonLine':
+          'இந்த மதியத்தில் வெப்பம், பயிர் அழுத்தம் மற்றும் மீதமுள்ள பண்ணை பணிகளை கவனியுங்கள்.',
+      'dashboardEveningLine':
+          'இன்றைய பயிர், கால்நடை மற்றும் நாளைய திட்டத்தை மாலையில் ஒருமுறை பாருங்கள்.',
+      'animalCow': 'பசு',
+      'animalBuffalo': 'எருமை',
+      'animalGoat': 'ஆடு',
+      'animalSheep': 'செம்மறியாடு',
+      'animalPig': 'பன்றி',
+      'animalChicken': 'கோழி',
+      'animalHorse': 'குதிரை',
+      'animalFish': 'மீன்',
+      'recommendedLabel': 'பரிந்துரை',
+      'analyzedLabel': 'பகுப்பாய்வு முடிந்தது',
+      'sourceLabel': 'மூலம்',
+      'offlineLabel': 'ஆஃப்லைன்',
+      'cloudLabel': 'கிளவுட்',
+      'topRecommendations': 'சிறந்த பரிந்துரைகள்',
+      'recommendAgain': 'மீண்டும் பரிந்துரைக்கவும்',
+      'specialty': 'சிறப்பு',
+      'address': 'முகவரி',
+      'phone': 'தொலைபேசி',
+      'openNow': 'இப்போது திறந்துள்ளது',
+      'callNow': 'இப்போது அழைக்கவும்',
+      'chatOnWhatsApp': 'WhatsApp-ல் அரட்டை',
+      'getDirections': 'திசை பெறவும்',
+      'requestTimedOut': 'கோரிக்கை நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.',
+      'somethingWentWrong': 'ஏதோ தவறு ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.',
+      'justNow': 'இப்போது',
+      'minutesAgo': '{value}நி முன்',
+      'hoursAgo': '{value}மணி முன்',
+      'daysAgo': '{value}நாள் முன்',
+    },
+    'te': {
+      'dashboardMorningLine':
+          'పొలం పరిశీలన, నీటి ప్రణాళికలు మరియు ఉదయం నిర్ణయాలకు ఇది మంచి ఆరంభం.',
+      'dashboardAfternoonLine':
+          'ఈ మధ్యాహ్నం వేడి, పంట ఒత్తిడి మరియు మిగిలిన వ్యవసాయ పనులపై దృష్టి పెట్టండి.',
+      'dashboardEveningLine':
+          'ఈరోజు పంటలు, పశుసంవర్థక పరిస్థితి మరియు రేపటి పనితీరును సాయంత్రం ఒకసారి చూడండి.',
+      'animalCow': 'ఆవు',
+      'animalBuffalo': 'ఎద్దు',
+      'animalGoat': 'మేక',
+      'animalSheep': 'గొర్రె',
+      'animalPig': 'పంది',
+      'animalChicken': 'కోడి',
+      'animalHorse': 'గుర్రం',
+      'animalFish': 'చేప',
+      'recommendedLabel': 'సిఫార్సు',
+      'analyzedLabel': 'విశ్లేషించబడింది',
+      'sourceLabel': 'మూలం',
+      'offlineLabel': 'ఆఫ్లైన్',
+      'cloudLabel': 'క్లౌడ్',
+      'topRecommendations': 'ముఖ్య సిఫార్సులు',
+      'recommendAgain': 'మళ్లీ సిఫార్సు చేయండి',
+      'specialty': 'ప్రత్యేకత',
+      'address': 'చిరునామా',
+      'phone': 'ఫోన్',
+      'openNow': 'ఇప్పుడు తెరిచి ఉంది',
+      'callNow': 'ఇప్పుడే కాల్ చేయండి',
+      'chatOnWhatsApp': 'WhatsApp లో చాట్',
+      'getDirections': 'దారి చూడండి',
+      'requestTimedOut': 'అభ్యర్థన సమయం ముగిసింది. మళ్లీ ప్రయత్నించండి.',
+      'somethingWentWrong': 'ఏదో తప్పు జరిగింది. మళ్లీ ప్రయత్నించండి.',
+      'justNow': 'ఇప్పుడే',
+      'minutesAgo': '{value}ని క్రితం',
+      'hoursAgo': '{value}గం క్రితం',
+      'daysAgo': '{value}రోజుల క్రితం',
+    },
+  };
+
+  static const Map<String, Map<String, String>> _dynamicValueTranslations = {
+    'hi': {
+      'Clear': 'साफ',
+      'Cloudy': 'बादल',
+      'Rain': 'बारिश',
+      'Fog': 'कोहरा',
+      'Thunderstorm': 'आंधी',
+      'Snow': 'बर्फ',
+      'Weather': 'मौसम',
+      'Current location': 'वर्तमान स्थान',
+      'Recommended': 'सिफारिश',
+      'Analyzed': 'विश्लेषित',
+      'Open': 'खुला',
+      'Closed': 'बंद',
+      'Rice': 'धान',
+      'rice': 'धान',
+      'Maize': 'मक्का',
+      'Wheat': 'गेहूं',
+      'Tomato': 'टमाटर',
+      'Potato': 'आलू',
+      'Sandy': 'बलुई',
+      'Loamy': 'दोमट',
+      'Clayey': 'चिकनी',
+      'Seeds, fertilizers, pesticides': 'बीज, उर्वरक, कीटनाशक',
+      'Cattle and Buffalo Specialist': 'गाय और भैंस विशेषज्ञ',
+      'Pump and sprayer servicing': 'पंप और स्प्रेयर सर्विस',
+    },
+    'od': {
+      'Clear': 'ସ୍ପଷ୍ଟ',
+      'Cloudy': 'ମେଘାଚ୍ଛନ୍ନ',
+      'Rain': 'ବର୍ଷା',
+      'Fog': 'କୁହୁଡ଼ି',
+      'Thunderstorm': 'ବଜ୍ରପାତ',
+      'Snow': 'ହିମପାତ',
+      'Weather': 'ପାଗ',
+      'Current location': 'ବର୍ତ୍ତମାନ ଅବସ୍ଥାନ',
+      'Recommended': 'ସୁପାରିଶ',
+      'Analyzed': 'ବିଶ୍ଳେଷିତ',
+      'Open': 'ଖୋଲା',
+      'Closed': 'ବନ୍ଦ',
+      'Rice': 'ଧାନ',
+      'rice': 'ଧାନ',
+      'Maize': 'ମକା',
+      'Wheat': 'ଗହମ',
+      'Tomato': 'ଟମାଟୋ',
+      'Potato': 'ଆଳୁ',
+      'Sandy': 'ବାଲୁକାମୟ',
+      'Loamy': 'ଦୋଆବ',
+      'Clayey': 'ଦଳିଆ',
+      'Seeds, fertilizers, pesticides': 'ବୀଜ, ସାର, କୀଟନାଶକ',
+      'Cattle and Buffalo Specialist': 'ଗାଈ ଓ ମହିଷ ବିଶେଷଜ୍ଞ',
+      'Pump and sprayer servicing': 'ପମ୍ପ ଓ ସ୍ପ୍ରେୟର ସେବା',
+    },
+    'ta': {
+      'Clear': 'தெளிவு',
+      'Cloudy': 'மேகமூட்டம்',
+      'Rain': 'மழை',
+      'Fog': 'மூடுபனி',
+      'Thunderstorm': 'இடி மின்னல்',
+      'Snow': 'பனி',
+      'Weather': 'வானிலை',
+      'Current location': 'தற்போதைய இடம்',
+      'Recommended': 'பரிந்துரை',
+      'Analyzed': 'பகுப்பாய்வு',
+      'Open': 'திறந்துள்ளது',
+      'Closed': 'மூடப்பட்டது',
+      'Rice': 'நெல்',
+      'rice': 'நெல்',
+      'Maize': 'மக்காச்சோளம்',
+      'Wheat': 'கோதுமை',
+      'Tomato': 'தக்காளி',
+      'Potato': 'உருளைக்கிழங்கு',
+      'Sandy': 'மணற்பாங்கு',
+      'Loamy': 'கரிசல்',
+      'Clayey': 'சருகு மண்',
+      'Seeds, fertilizers, pesticides': 'விதைகள், உரங்கள், பூச்சிக்கொல்லிகள்',
+      'Cattle and Buffalo Specialist': 'மாடு மற்றும் எருமை நிபுணர்',
+      'Pump and sprayer servicing': 'பம்ப் மற்றும் தெளிப்பான் சேவை',
+    },
+    'te': {
+      'Clear': 'స్పష్టం',
+      'Cloudy': 'మేఘావృతం',
+      'Rain': 'వర్షం',
+      'Fog': 'మంచు',
+      'Thunderstorm': 'పిడుగు వాన',
+      'Snow': 'మంచుపాతం',
+      'Weather': 'వాతావరణం',
+      'Current location': 'ప్రస్తుత స్థానం',
+      'Recommended': 'సిఫార్సు',
+      'Analyzed': 'విశ్లేషించబడింది',
+      'Open': 'తెరిచి ఉంది',
+      'Closed': 'మూసివేసింది',
+      'Rice': 'వరి',
+      'rice': 'వరి',
+      'Maize': 'మొక్కజొన్న',
+      'Wheat': 'గోధుమ',
+      'Tomato': 'టమాటా',
+      'Potato': 'బంగాళాదుంప',
+      'Sandy': 'ఇసుక మట్టి',
+      'Loamy': 'లోమీ మట్టి',
+      'Clayey': 'మట్టికల మట్టి',
+      'Seeds, fertilizers, pesticides': 'విత్తనాలు, ఎరువులు, పురుగుమందులు',
+      'Cattle and Buffalo Specialist': 'ఆవు మరియు ఎద్దు నిపుణుడు',
+      'Pump and sprayer servicing': 'పంపు మరియు స్ప్రేయర్ సేవ',
+    },
   };
 
   static const Map<String, Map<String, String>> _localizedFallback = {
@@ -523,18 +816,131 @@ class LangSvc extends ChangeNotifier {
 
   Future<void> _load(String code) async {
     try {
-      final raw = await rootBundle.loadString('assets/languages/$code.json');
+      _englishMap = await _loadAssetMap('en');
+      if (code == 'en') {
+        _selectedMap = Map<String, String>.from(_englishMap);
+        _map = Map<String, String>.from(_englishMap);
+        return;
+      }
 
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-
-      _map = decoded.map((k, v) => MapEntry(k, v.toString()));
+      _selectedMap = await _loadAssetMap(code);
+      _map = {
+        ..._englishMap,
+        ..._selectedMap,
+      };
     } catch (_) {
-      _map = {};
+      _selectedMap = const {};
+      _map = Map<String, String>.from(_englishMap);
     }
   }
 
-  String t(String key) =>
-      _map[key] ?? _localizedFallback[lang]?[key] ?? _fallback[key] ?? key;
+  Future<Map<String, String>> _loadAssetMap(String code) async {
+    final raw = await rootBundle.loadString('assets/languages/$code.json');
+    final sanitized = raw.startsWith('\ufeff') ? raw.substring(1) : raw;
+    final decoded = jsonDecode(sanitized) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(k, _normalizeText(v.toString())));
+  }
+
+  String t(String key) {
+    final english = _englishMap[key];
+    final selected = _selectedMap[key];
+    final localized = _extraLocalizedFallback[lang]?[key] ??
+        _localizedFallback[lang]?[key];
+
+    if (lang != 'en') {
+      if (selected != null &&
+          selected.isNotEmpty &&
+          (english == null || selected != english)) {
+        return _normalizeText(selected);
+      }
+      if (localized != null && localized.isNotEmpty) {
+        return _normalizeText(localized);
+      }
+      if (selected != null && selected.isNotEmpty) {
+        return _normalizeText(selected);
+      }
+    }
+
+    return _normalizeText(
+      english ?? localized ?? _fallback[key] ?? key,
+    );
+  }
+
+  String displayAnimal(String value) => switch (value) {
+        'Cow' => t('animalCow'),
+        'Buffalo' => t('animalBuffalo'),
+        'Goat' => t('animalGoat'),
+        'Sheep' => t('animalSheep'),
+        'Pig' => t('animalPig'),
+        'Chicken' => t('animalChicken'),
+        'Horse' => t('animalHorse'),
+        'Fish' => t('animalFish'),
+        _ => displayText(value),
+      };
+
+  String displayText(String value) {
+    var text = _normalizeText(value);
+    text = _prettifyPredictionText(text);
+    final translations = _dynamicValueTranslations[lang];
+    if (translations == null || text.isEmpty) return text;
+    if (translations.containsKey(text)) return translations[text]!;
+
+    final entries = translations.entries.toList()
+      ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    for (final entry in entries) {
+      text = text.replaceAll(entry.key, entry.value);
+    }
+    return text;
+  }
+
+  String _prettifyPredictionText(String input) {
+    var text = input.trim();
+    if (text.isEmpty) return text;
+
+    if (text.contains('___')) {
+      final parts = text.split('___');
+      final crop = parts.first;
+      final disease = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      final cropText = _titleizePredictionPart(crop);
+      final diseaseText = _titleizePredictionPart(disease);
+      if (diseaseText.isEmpty) return cropText;
+      if (diseaseText.toLowerCase() == 'healthy') return '$cropText Healthy';
+      return '$cropText - $diseaseText';
+    }
+
+    if (RegExp(r'^[A-Za-z0-9,_() -]+$').hasMatch(text) &&
+        (text.contains('_') || text.contains('(') || text.contains(')'))) {
+      return _titleizePredictionPart(text);
+    }
+
+    return text;
+  }
+
+  String _titleizePredictionPart(String value) {
+    final cleaned = value
+        .replaceAll('_', ' ')
+        .replaceAll(',', ' ')
+        .replaceAll('(', ' ')
+        .replaceAll(')', ' ');
+    final compact = cleaned
+        .split(' ')
+        .where((part) => part.trim().isNotEmpty)
+        .join(' ');
+    if (compact.isEmpty) return compact;
+    return compact
+        .split(' ')
+        .map((part) => part.isEmpty
+            ? part
+            : part[0].toUpperCase() + part.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  String format(String key, String fallback, Object value) =>
+      (() {
+        final raw = t(key);
+        final template = raw == key ? fallback : raw;
+        return template.replaceAll('{value}', value.toString());
+      })();
 
   String greeting() {
     final h = DateTime.now().hour;
@@ -543,5 +949,38 @@ class LangSvc extends ChangeNotifier {
     if (h < 17) return t('goodAfternoon');
 
     return t('goodEvening');
+  }
+
+  String languageName(String code) =>
+      _normalizeText(supported[code] ?? supported['en']!);
+
+  String nativeLanguageName(String code) =>
+      _normalizeText(nativeNames[code] ?? languageName(code));
+
+  String languageFlag(String code) => _normalizeText(flags[code] ?? flags['en']!);
+
+  String _normalizeText(String input) {
+    var text = input;
+    for (var i = 0; i < 3; i++) {
+      if (!_looksMisencoded(text)) break;
+      try {
+        final repaired = utf8.decode(latin1.encode(text), allowMalformed: true);
+        if (_misencodedScore(repaired) >= _misencodedScore(text)) break;
+        text = repaired;
+      } catch (_) {
+        break;
+      }
+    }
+    return text;
+  }
+
+  bool _looksMisencoded(String value) => _misencodedScore(value) > 0;
+
+  int _misencodedScore(String value) {
+    var score = 0;
+    for (final token in const ['Ã', 'Â', 'à', 'ðŸ', 'â‚', 'â€”']) {
+      score += token.allMatches(value).length;
+    }
+    return score;
   }
 }

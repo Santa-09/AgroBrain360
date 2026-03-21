@@ -1,6 +1,6 @@
 from typing import Any
 
-from services import groq_service
+from services import groq_service, llm_service, translation_service
 
 
 def _system_prompt(language: str, module: str) -> str:
@@ -20,15 +20,36 @@ async def chat_case(
     context: dict[str, Any] | None = None,
     language: str = "en",
 ) -> dict[str, Any]:
-    response = await groq_service.generate_response(
-        question,
-        system_prompt=_system_prompt(language, module),
-        module=module,
-        language=language,
-        context=context or {},
+    language = translation_service.normalize_language_code(language)
+    prompt = (
+        f"Farmer follow-up question: {question}\n"
+        f"Case context: {context or {}}\n"
+        "Answer with practical next steps, what to monitor, and when expert help is needed."
     )
-    return {
-        "ai_response": response["text"],
-        "module": module,
-        "source": response.get("source", "groq"),
-    }
+    try:
+        response = await groq_service.generate_response(
+            question,
+            system_prompt=_system_prompt(language, module),
+            module=module,
+            language=language,
+            context=context or {},
+        )
+        return {
+            "ai_response": llm_service.clean_advisory_text(response["text"]),
+            "module": module,
+            "source": response.get("source", "groq"),
+        }
+    except groq_service.GroqServiceError:
+        return {
+            "ai_response": llm_service.offline_advisory(
+                module=module,
+                data={
+                    **(context or {}),
+                    "question": question,
+                },
+                prompt=prompt,
+                language=language,
+            ),
+            "module": module,
+            "source": "fallback",
+        }

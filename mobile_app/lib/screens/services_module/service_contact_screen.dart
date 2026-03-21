@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/helpers.dart';
+import '../../services/language_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_card.dart';
 
 class ServiceContactScreen extends StatelessWidget {
   final Map<String, dynamic> svc;
   const ServiceContactScreen({super.key, required this.svc});
+
+  String tr(String key, String fallback) {
+    final value = LangSvc().t(key);
+    return value == key ? fallback : value;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +89,7 @@ class ServiceContactScreen extends StatelessWidget {
             Row(children: [
               _pill(
                   Icons.circle,
-                  open ? 'Open Now' : 'Closed',
+                  open ? tr('openNow', 'Open Now') : tr('closedLabel', 'Closed'),
                   open ? AppColors.success : AppColors.danger,
                   open ? AppColors.successFaint : AppColors.dangerFaint),
               const SizedBox(width: 8),
@@ -95,28 +102,31 @@ class ServiceContactScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ACard(
                 child: Column(children: [
-              KVRow('Specialty', svc['specialty'] as String? ?? ''),
+              KVRow(
+                tr('specialty', 'Specialty'),
+                H.displayText(svc['specialty'] as String? ?? ''),
+              ),
               const Divider(height: 16),
-              KVRow('Address', svc['address'] as String? ?? ''),
+              KVRow(tr('address', 'Address'), svc['address'] as String? ?? ''),
               const Divider(height: 16),
-              KVRow('Phone', phone),
+              KVRow(tr('phone', 'Phone'), phone),
             ])),
             const SizedBox(height: 16),
             Btn(
-                label: 'Call Now',
+                label: tr('callNow', 'Call Now'),
                 icon: Icons.phone_rounded,
                 bg: AppColors.indigoDark,
                 onTap: () => launchUrl(Uri.parse('tel:$phone'))),
             const SizedBox(height: 10),
             Btn(
-                label: 'Chat on WhatsApp',
+                label: tr('chatOnWhatsApp', 'Chat on WhatsApp'),
                 icon: Icons.chat_rounded,
                 bg: const Color(0xFF25D366),
                 onTap: () => launchUrl(Uri.parse(
                     'https://wa.me/91${phone.replaceAll(RegExp(r'\D'), '')}?text=Hello,+I+need+agricultural+services.'))),
             const SizedBox(height: 10),
             Btn.outline(
-                label: 'Get Directions',
+                label: tr('getDirections', 'Get Directions'),
                 icon: Icons.directions_rounded,
                 fg: AppColors.indigoDark,
                 onTap: () => launchUrl(directionsUri)),

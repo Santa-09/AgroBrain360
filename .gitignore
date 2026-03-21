@@ -1,56 +1,89 @@
-# Backend secrets and local runtime files
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.sample
 backend/.env
 backend/.env.*
 !backend/.env.example
-backend/*.log
-backend/.pytest_cache/
-backend/__pycache__/
-backend/static/voice/
-backend/test_*.db
-backend/*.sqlite3
-backend/*.db
-backend/ml_models/
+
+# Logs and local runtime output
+*.log
+*.out
+*.err
+*.pid
+*.pid.lock
+backend/uvicorn_*.log
+backend/uvicorn_*.err.log
+
+# Python caches and test artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
 
 # Python virtual environments
-backend/venv/
 .venv/
 venv/
-__pycache__/
-.pytest_cache/
+ENV/
+env/
+backend/venv/
+backend/tts_venv/
 
-# Flutter and Android local files
+# Backend generated files
+backend/static/voice/
+backend/tts_cache/
+backend/tmp_voice_test.wav
+backend/*.sqlite3
+backend/*.db
+backend/test_*.db
+
+# Flutter / Dart generated files
 mobile_app/.dart_tool/
-mobile_app/.idea/
-mobile_app/.vscode/
 mobile_app/.flutter-plugins
 mobile_app/.flutter-plugins-dependencies
 mobile_app/build/
 mobile_app/flutter_*.log
 mobile_app/.packages
+
+# Flutter platform build artifacts
 mobile_app/android/.gradle/
 mobile_app/android/local.properties
 mobile_app/android/key.properties
 mobile_app/android/**/*.jks
 mobile_app/android/**/*.keystore
-mobile_app/android/upload-keystore.jks
 mobile_app/android/hs_err_pid*.log
 mobile_app/android/replay_pid*.log
-mobile_app/build/
-mobile_app/.flutter-plugins
-mobile_app/.flutter-plugins-dependencies
+mobile_app/ios/Flutter/Generated.xcconfig
+mobile_app/ios/Flutter/flutter_export_environment.sh
+mobile_app/macos/Flutter/ephemeral/
+mobile_app/linux/flutter/ephemeral/
+mobile_app/windows/flutter/ephemeral/
 
 # IDE and OS noise
 .idea/
 .vscode/
 *.iml
-*.log
-*.aab
-*.apk
-hs_err_pid*.log
-replay_pid*.log
 Thumbs.db
 .DS_Store
 
-# Large datasets and model artifacts
+# Release artifacts
+*.apk
+*.aab
+*.ipa
+
+# Large local-only data and temporary research
 datasets/
+backend/ml_models/
 ml_models/
+tmp_cognitive_speech/
+
+# Keep production docs and source tools tracked by default

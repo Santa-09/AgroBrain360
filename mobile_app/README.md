@@ -1,16 +1,50 @@
-# mobile_app
+# AgroBrain360 Mobile App
 
-A new Flutter project.
+This mobile app is now configured to run against the local backend by default.
 
-## Getting Started
+## Current Local Setup
 
-This project is a starting point for a Flutter application.
+- default API root: `http://10.0.2.2:8000`
+- `USE_LOCAL_API`: enabled by default in code
+- production Render URL is no longer the default path
 
-A few resources to get you started if this is your first Flutter project:
+## Run Locally
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Android Emulator
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Use:
+
+```bash
+flutter run
+```
+
+The app will call:
+
+```text
+http://10.0.2.2:8000
+```
+
+### Physical Android Device
+
+If you run on a real device, replace `10.0.2.2` with your computer's LAN IP:
+
+```bash
+flutter run --dart-define=API_LOCAL_URL=http://YOUR_PC_IP:8000 --dart-define=USE_LOCAL_API=true
+```
+
+Example:
+
+```bash
+flutter run --dart-define=API_LOCAL_URL=http://192.168.1.5:8000 --dart-define=USE_LOCAL_API=true
+```
+
+## File Controlling This
+
+- `lib/core/constants/api_constants.dart`
+
+## Notes
+
+- Supabase auth is still used by the app.
+- The backend should be running locally on port `8000`.
+- For emulator use, `10.0.2.2` is correct.
+- For a real phone, use your machine's local IP.

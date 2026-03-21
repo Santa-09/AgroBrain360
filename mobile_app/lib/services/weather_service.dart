@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
+import 'language_service.dart';
+
 class WeatherSvc {
   static final WeatherSvc _i = WeatherSvc._();
   factory WeatherSvc() => _i;
@@ -79,11 +81,13 @@ class WeatherSvc {
           .get(geoUri, headers: const {'Accept': 'application/json'})
           .timeout(const Duration(seconds: 6));
       if (geoRes.statusCode < 200 || geoRes.statusCode >= 300) {
-        return 'Current location';
+        return LangSvc().displayText('Current location');
       }
       final geoBody = jsonDecode(geoRes.body) as Map<String, dynamic>;
       final results = geoBody['results'];
-      if (results is! List || results.isEmpty) return 'Current location';
+      if (results is! List || results.isEmpty) {
+        return LangSvc().displayText('Current location');
+      }
       final first = Map<String, dynamic>.from(results.first as Map);
       final name = first['name']?.toString().trim();
       final admin = first['admin1']?.toString().trim();
@@ -92,20 +96,20 @@ class WeatherSvc {
       }
       if (name != null && name.isNotEmpty) return name;
     } catch (_) {}
-    return 'Current location';
+    return LangSvc().displayText('Current location');
   }
 
   String _conditionFromCode(int code) {
     switch (code) {
       case 0:
-        return 'Clear';
+        return LangSvc().displayText('Clear');
       case 1:
       case 2:
       case 3:
-        return 'Cloudy';
+        return LangSvc().displayText('Cloudy');
       case 45:
       case 48:
-        return 'Fog';
+        return LangSvc().displayText('Fog');
       case 51:
       case 53:
       case 55:
@@ -119,20 +123,20 @@ class WeatherSvc {
       case 80:
       case 81:
       case 82:
-        return 'Rain';
+        return LangSvc().displayText('Rain');
       case 71:
       case 73:
       case 75:
       case 77:
       case 85:
       case 86:
-        return 'Snow';
+        return LangSvc().displayText('Snow');
       case 95:
       case 96:
       case 99:
-        return 'Thunderstorm';
+        return LangSvc().displayText('Thunderstorm');
       default:
-        return 'Weather';
+        return LangSvc().displayText('Weather');
     }
   }
 }

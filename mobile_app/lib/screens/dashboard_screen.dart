@@ -91,9 +91,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String get _firstName =>
       (_user?['name'] as String? ?? 'Farmer').split(' ').first;
 
+  String get _greetingText => H.greeting();
+
   String t(String key, String fallback) {
     final value = LangSvc().t(key);
     return value == key ? fallback : value;
+  }
+
+  String _timeContextMessage() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return t(
+        'dashboardMorningLine',
+        'A fresh start for field checks, watering plans, and early decisions.',
+      );
+    }
+    if (hour < 17) {
+      return t(
+        'dashboardAfternoonLine',
+        'Keep an eye on heat, crop stress, and pending farm tasks this afternoon.',
+      );
+    }
+    return t(
+      'dashboardEveningLine',
+      'Wrap up today with quick checks on crops, livestock, and tomorrow\'s plan.',
+    );
+  }
+
+  String _formattedToday() {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final now = DateTime.now();
+    return '${months[now.month - 1]} ${now.day}';
   }
 
   Future<void> _openNotifications() async {
@@ -141,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           delegate: SliverChildListDelegate([
                             if (!_online) _offlineBanner(),
                             const SizedBox(height: 12),
-                            _weatherCard(),
+                            _greetingWeatherHero(),
                             const SizedBox(height: 16),
                             _fhiCard(),
                             const SizedBox(height: 24),
@@ -177,9 +218,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _weatherCard() {
-    final condition = _weather?['condition']?.toString() ?? t('weather', 'Weather');
-    final location =
-        _weather?['location']?.toString() ?? t('currentLocation', 'Current location');
+    final condition = H.displayText(
+      _weather?['condition']?.toString() ?? t('weather', 'Weather'),
+    );
+    final location = H.displayText(
+      _weather?['location']?.toString() ??
+          t('currentLocation', 'Current location'),
+    );
     final temperature = (_weather?['temperature'] as num?)?.toDouble();
     final humidity = (_weather?['humidity'] as num?)?.toInt();
     final wind = (_weather?['windSpeed'] as num?)?.toDouble();
@@ -354,6 +399,267 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _greetingWeatherHero() {
+    final condition = H.displayText(
+      _weather?['condition']?.toString() ?? t('weather', 'Weather'),
+    );
+    final location = H.displayText(
+      _weather?['location']?.toString() ??
+          t('currentLocation', 'Current location'),
+    );
+    final temperature = (_weather?['temperature'] as num?)?.toDouble();
+    final humidity = (_weather?['humidity'] as num?)?.toInt();
+    final wind = (_weather?['windSpeed'] as num?)?.toDouble();
+    final icon = _weatherIcon(condition);
+    final errorCode = _weatherError;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF123524), Color(0xFF1F6F43), Color(0xFF78A85A)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        _formattedToday(),
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      '$_greetingText, $_firstName',
+                      style: GoogleFonts.dmSans(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        height: 1.12,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _timeContextMessage(),
+                      style: GoogleFonts.dmSans(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 13,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(icon, color: Colors.white, size: 30),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t('liveWeather', 'Live Weather'),
+                            style: GoogleFonts.dmSans(
+                              color: Colors.white.withValues(alpha: 0.76),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.dmSans(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _weatherLoading ? null : _loadWeather,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: _weatherLoading
+                            ? SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.refresh_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    t('refresh', 'Refresh'),
+                                    style: GoogleFonts.dmSans(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (!_online)
+                  _weatherMessage(
+                    t(
+                      'weatherOffline',
+                      'Connect to the internet to see live weather.',
+                    ),
+                  )
+                else if (errorCode != null)
+                  _weatherMessage(_weatherErrorText(errorCode))
+                else if (temperature == null)
+                  _weatherMessage(
+                    t(
+                      'weatherLoading',
+                      'Fetching current weather conditions...',
+                    ),
+                  )
+                else
+                  Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${temperature.round()}°C',
+                            style: GoogleFonts.dmSans(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: Text(
+                              condition,
+                              style: GoogleFonts.dmSans(
+                                color: Colors.white.withValues(alpha: 0.88),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _weatherMetric(
+                              Icons.water_drop_rounded,
+                              t('humidity', 'Humidity'),
+                              humidity == null ? '--' : '$humidity%',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _weatherMetric(
+                              Icons.air_rounded,
+                              t('wind', 'Wind'),
+                              wind == null
+                                  ? '--'
+                                  : '${wind.toStringAsFixed(1)} km/h',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _weatherMessage(String text) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
@@ -488,7 +794,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${H.greeting()}, $_firstName',
+                    '$_greetingText, $_firstName',
                     style: GoogleFonts.dmSans(
                       color: Colors.white,
                       fontSize: 14,
@@ -853,7 +1159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    scan['title'] as String? ?? t('scan', 'Scan'),
+                    H.displayText(scan['title'] as String? ?? t('scan', 'Scan')),
                     style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -879,7 +1185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration:
                     BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
                 child: Text(
-                  scan['result'] as String,
+                  H.displayText(scan['result'] as String),
                   style: GoogleFonts.dmSans(
                     color: color,
                     fontSize: 10,

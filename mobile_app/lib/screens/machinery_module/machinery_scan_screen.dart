@@ -257,8 +257,26 @@ class _MachineryScanScreenState extends State<MachineryScanScreen> {
 
   Future<void> _toggleVoice() async {
     if (_backendRecording) {
-      await VoiceSvc().cancelBackendRecording();
-      if (mounted) setState(() => _backendRecording = false);
+      final res = await VoiceSvc().stopBackendRecordingAndTranscribe(
+        lang: LangSvc().lang,
+        detectIntent: false,
+        prompt: 'Transcribe machinery issue or request clearly.',
+      );
+      if (!mounted) return;
+      setState(() => _backendRecording = false);
+      if (res.ok && res.data != null) {
+        final payload = res.data!;
+        final data = payload['data'] as Map<String, dynamic>? ?? payload;
+        final text = (data['text'] ?? '').toString().trim();
+        if (text.isNotEmpty) {
+          setState(() => _voiceNoteCtrl.text = text);
+        } else {
+          H.snack(context, tr('noSpeechDetected', 'No speech detected'), error: true);
+        }
+      } else if (mounted) {
+        H.snack(context, res.error ?? tr('voiceFailed', 'AI voice request failed'), error: true);
+      }
+      return;
     }
     if (_listening) {
       await VoiceSvc().stop();
@@ -278,7 +296,14 @@ class _MachineryScanScreenState extends State<MachineryScanScreen> {
     );
     if (!started && mounted) {
       setState(() => _listening = false);
-      H.snack(context, tr('voiceUnavailable', 'Voice input is unavailable right now'), error: true);
+      final backendStarted = await VoiceSvc().startBackendRecording();
+      if (!mounted) return;
+      if (backendStarted) {
+        setState(() => _backendRecording = true);
+        H.snack(context, tr('recordingAiVoice', 'Recording for AI voice... tap Stop when finished.'));
+      } else {
+        H.snack(context, tr('voiceUnavailable', 'Voice input is unavailable right now'), error: true);
+      }
     }
   }
 
@@ -304,7 +329,9 @@ class _MachineryScanScreenState extends State<MachineryScanScreen> {
         final data = payload['data'] as Map<String, dynamic>? ?? payload;
         setState(() {
           _voiceNoteCtrl.text = (data['user_text'] ?? '').toString();
-          _machineryAdvisory = (data['ai_response'] ?? '').toString();
+          _machineryAdvisory = (data['ai_response'] ?? '')
+              .toString()
+              .replaceAll('**', '');
         });
         await VoiceSvc().setLang(LangSvc().lang);
         await VoiceSvc().speakWithFallback(

@@ -212,11 +212,16 @@ class _CropScanScreenState extends State<CropScanScreen> {
         DateTime.now().millisecondsSinceEpoch.toString(),
         {
           'type': 'crop',
-          'title': result['disease_name'] ?? _tr('cropDisease', 'Crop Section'),
+          'title': H.displayText(
+            result['disease_name']?.toString() ??
+                _tr('cropDisease', 'Crop Section'),
+          ),
           'result': H.cap(
-            widget.mode == CropScanMode.cropDetection
-                ? (result['result_tag'] ?? _tr('detectedLabel', 'Detected'))
-                : (result['severity'] ?? _tr('scannedLabel', 'Scanned')),
+            H.displayText(
+              widget.mode == CropScanMode.cropDetection
+                  ? (result['result_tag'] ?? _tr('detectedLabel', 'Detected'))
+                  : (result['severity'] ?? _tr('scannedLabel', 'Scanned')),
+            ),
           ),
           'ts': DateTime.now().toIso8601String(),
           'source': result['source'] ?? (online ? 'cloud' : 'offline'),
@@ -319,8 +324,26 @@ class _CropScanScreenState extends State<CropScanScreen> {
 
   Future<void> _toggleVoice() async {
     if (_backendRecording) {
-      await VoiceSvc().cancelBackendRecording();
-      if (mounted) setState(() => _backendRecording = false);
+      final res = await VoiceSvc().stopBackendRecordingAndTranscribe(
+        lang: LangSvc().lang,
+        detectIntent: false,
+        prompt: _whisperPrompt,
+      );
+      if (!mounted) return;
+      setState(() => _backendRecording = false);
+      if (res.ok && res.data != null) {
+        final payload = res.data!;
+        final data = payload['data'] as Map<String, dynamic>? ?? payload;
+        final text = (data['text'] ?? '').toString().trim();
+        if (text.isNotEmpty) {
+          setState(() => _cropTypeCtrl.text = text);
+        } else {
+          H.snack(context, _tr('noSpeechDetected', 'No speech detected'), error: true);
+        }
+      } else {
+        H.snack(context, res.error ?? _tr('voiceFailed', 'AI voice request failed'), error: true);
+      }
+      return;
     }
     if (_listening) {
       await VoiceSvc().stop();
@@ -340,11 +363,18 @@ class _CropScanScreenState extends State<CropScanScreen> {
     );
     if (!started && mounted) {
       setState(() => _listening = false);
-      H.snack(
-        context,
-        _tr('voiceUnavailable', 'Voice input is unavailable right now'),
-        error: true,
-      );
+      final backendStarted = await VoiceSvc().startBackendRecording();
+      if (!mounted) return;
+      if (backendStarted) {
+        setState(() => _backendRecording = true);
+        H.snack(context, _tr('recordingAiVoice', 'Recording for AI voice... tap Stop when finished.'));
+      } else {
+        H.snack(
+          context,
+          _tr('voiceUnavailable', 'Voice input is unavailable right now'),
+          error: true,
+        );
+      }
     }
   }
 
@@ -441,7 +471,7 @@ class _CropScanScreenState extends State<CropScanScreen> {
     final roi = data['roi'] as Map<String, dynamic>? ?? {};
     return {
       'analysis_mode': 'disease_detection',
-      'disease_name': data['disease'] ?? 'Unknown',
+      'disease_name': data['disease_display'] ?? data['disease'] ?? 'Unknown',
       'confidence': ((data['confidence'] as num?) ?? 0).toDouble() * 100,
       'severity': (data['severity'] ?? 'medium').toString().toLowerCase(),
       'description': data['prevention'] ?? 'Cloud diagnosis completed.',

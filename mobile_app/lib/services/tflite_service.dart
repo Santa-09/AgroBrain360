@@ -77,11 +77,20 @@ class TFSvc {
 
   Future<void> load() async {
     await Future.wait([
-      _loadCropDiseaseModel(),
-      _loadCropRecommendationModel(),
-      _loadFertilizerModel(),
-      _loadLivestockModel(),
+      _safeLoad(_loadCropDiseaseModel),
+      _safeLoad(_loadCropRecommendationModel),
+      _safeLoad(_loadFertilizerModel),
+      _safeLoad(_loadLivestockModel),
     ]);
+  }
+
+  Future<void> _safeLoad(Future<void> Function() loader) async {
+    try {
+      await loader();
+    } catch (_) {
+      // Keep app startup resilient in local/dev mode even if one model asset
+      // is unavailable; feature screens already handle model-not-loaded cases.
+    }
   }
 
   Future<void> _loadCropDiseaseModel() {
@@ -101,32 +110,50 @@ class TFSvc {
 
   Future<void> _loadCropRecommendationModel() {
     return _cropRecommendationLoadFuture ??= () async {
-      if (_cropRecommendation != null && _cropRecommendationMeta != null)
+      if (_cropRecommendation != null && _cropRecommendationMeta != null) {
         return;
-      _cropRecommendation = await Interpreter.fromAsset(
-          'assets/models/crop_recommendation.tflite');
-      final metaText = await rootBundle
-          .loadString('assets/models/crop_recommendation_meta.json');
-      _cropRecommendationMeta = jsonDecode(metaText) as Map<String, dynamic>;
+      }
+      try {
+        _cropRecommendation = await Interpreter.fromAsset(
+          'assets/models/crop_recommendation.tflite',
+        );
+        final metaText = await rootBundle
+            .loadString('assets/models/crop_recommendation_meta.json');
+        _cropRecommendationMeta = jsonDecode(metaText) as Map<String, dynamic>;
+      } catch (_) {
+        _cropRecommendationLoadFuture = null;
+        rethrow;
+      }
     }();
   }
 
   Future<void> _loadFertilizerModel() {
     return _fertilizerLoadFuture ??= () async {
       if (_fertilizer != null && _fertilizerMeta != null) return;
-      _fertilizer = await Interpreter.fromAsset(
-          'assets/models/fertilizer_recommendation.tflite');
-      final metaText = await rootBundle
-          .loadString('assets/models/fertilizer_recommendation_meta.json');
-      _fertilizerMeta = jsonDecode(metaText) as Map<String, dynamic>;
+      try {
+        _fertilizer = await Interpreter.fromAsset(
+          'assets/models/fertilizer_recommendation.tflite',
+        );
+        final metaText = await rootBundle
+            .loadString('assets/models/fertilizer_recommendation_meta.json');
+        _fertilizerMeta = jsonDecode(metaText) as Map<String, dynamic>;
+      } catch (_) {
+        _fertilizerLoadFuture = null;
+        rethrow;
+      }
     }();
   }
 
   Future<void> _loadLivestockModel() {
     return _livestockLoadFuture ??= () async {
       if (_livestock != null) return;
-      _livestock =
-          await Interpreter.fromAsset('assets/models/livestock_model.tflite');
+      try {
+        _livestock =
+            await Interpreter.fromAsset('assets/models/livestock_model.tflite');
+      } catch (_) {
+        _livestockLoadFuture = null;
+        rethrow;
+      }
     }();
   }
 
@@ -180,7 +207,22 @@ class TFSvc {
   }
 
   Future<Map<String, dynamic>> classifyLivestock(File image) async {
-    await _loadLivestockModel();
+    try {
+      await _loadLivestockModel();
+    } catch (e) {
+      return {
+        'label': 'Model not loaded',
+        'confidence': 0.0,
+        'error': e.toString(),
+      };
+    }
+    if (_livestock == null) {
+      return {
+        'label': 'Model not loaded',
+        'confidence': 0.0,
+        'error': 'Interpreter initialization failed',
+      };
+    }
     return _classifyImage(image, _livestock!, livestockLabels);
   }
 
@@ -194,6 +236,13 @@ class TFSvc {
     required double rainfall,
   }) async {
     await _loadCropRecommendationModel();
+    if (_cropRecommendation == null || _cropRecommendationMeta == null) {
+      return {
+        'crop': 'Model not loaded',
+        'confidence': 0.0,
+        'error': 'Crop recommendation model is unavailable on this build.',
+      };
+    }
     final meta = _cropRecommendationMeta!;
     final classes = (meta['classes'] as List).cast<String>();
 
@@ -236,6 +285,16 @@ class TFSvc {
     required double phosphorous,
   }) async {
     await _loadFertilizerModel();
+    if (_fertilizer == null || _fertilizerMeta == null) {
+      return {
+        'fertilizer': 'Model not loaded',
+        'confidence': 0.0,
+        'top_recommendations': const [],
+        'application_tip': 'Fertilizer model is unavailable on this build.',
+        'summary': 'Offline fertilizer prediction could not be initialized.',
+        'error': 'Fertilizer model not loaded',
+      };
+    }
     final meta = _fertilizerMeta!;
     final classes = (meta['classes'] as List).cast<String>();
     final soilTypes = (meta['soil_types'] as List).cast<String>();
