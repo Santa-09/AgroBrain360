@@ -1,5 +1,6 @@
 # backend/database/connection.py
 import logging
+import os
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -35,6 +36,12 @@ def get_engine() -> Engine:
 
 def init_db() -> None:
     """Verify the configured database is reachable and ensure required tables/columns exist."""
+    log.warning(">>> RAW ENV DATABASE_URL        = %s", os.environ.get("DATABASE_URL", "NOT SET"))
+    log.warning(
+        ">>> RAW ENV SUPABASE_DB_POOLER  = %s",
+        os.environ.get("SUPABASE_DB_POOLER_URL", "NOT SET"),
+    )
+    log.warning(">>> COMPUTED sqlalchemy_url     = %s", settings.sqlalchemy_database_url)
     try:
         engine = get_engine()
         with engine.connect() as connection:
