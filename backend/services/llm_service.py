@@ -144,24 +144,28 @@ async def generate(
     data: dict | None = None,
 ) -> str:
     """Call Groq and fall back to practical offline advice if unavailable."""
+    language = translation_service.normalize_language_code(language)
     try:
         response = await groq_service.generate_response(
             prompt,
             system_prompt=(
                 "You are AgroBrain360, an agricultural advisor for Indian farmers. "
-                f"Respond in {language}. Give direct farm advice, not greetings. "
+                "Respond in English. Give direct farm advice, not greetings. "
                 "Do not say 'How can I assist you today'. "
                 "Do not use markdown like **bold** or headings with #. "
                 "Give specific actions the farmer should take now."
             ),
-            language=language,
+            language="en",
             module=module,
             context=data,
         )
-        return clean_advisory_text(response["text"]) or (
+        cleaned = clean_advisory_text(response["text"]) or (
             "Please consult your local Krishi Vigyan Kendra or agriculture "
             "extension officer for specific advice."
         )
+        if language != "en":
+            cleaned = translation_service.translate(cleaned, language)
+        return clean_advisory_text(cleaned)
     except Exception as e:
         log.error("Groq advisory generation failed: %s", e)
         return offline_advisory(
