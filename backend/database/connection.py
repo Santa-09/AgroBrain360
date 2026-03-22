@@ -74,6 +74,8 @@ def init_db() -> None:
             )
         log.info("Database connection verified")
     except Exception as exc:
+        if settings.is_production:
+            raise RuntimeError(f"Database connection failed in production: {exc}") from exc
         log.warning("Database connection check skipped: %s", exc)
 
 
